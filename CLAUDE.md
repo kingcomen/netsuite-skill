@@ -42,6 +42,18 @@ Use the built-in Claude Code skills for any SuiteQL work:
 - `/ns-suiteql` — generate a SuiteQL query with automatic field guard against the 2026.1 schema
 - `/netsuite-suiteql` — SuiteQL syntax reference (Oracle SQL vs SQL-92 rules, joins, BUILTIN.*, pagination)
 
+## GitHub Repository Checklist
+
+ทุก project ที่ push ขึ้น GitHub **ต้องมี README.md** ที่หน้าแรกของ repo อ่านแล้วเข้าใจได้ทันที ประกอบด้วย:
+
+1. **ชื่อและคำอธิบาย** — project นี้ทำอะไร แก้ปัญหาอะไร
+2. **ลิงก์ PRD** — ตาราง PRD ID, version, status พร้อม link ไปไฟล์จริง
+3. **ขอบเขต** — In Scope ของ Phase ปัจจุบัน (bullet list)
+4. **Tech Stack** — ตาราง Layer / Technology
+5. **Skills ที่ใช้** — ลิงก์ไป `kingcomen/netsuite-skill` พร้อมระบุว่า skill ไหนใช้ทำอะไร
+
+> README ต้องเป็นสิ่งแรกที่อ่านก่อนเปิด codebase — ห้าม push ขึ้น GitHub โดยไม่มี README.md
+
 ## Deployment
 
 Projects deploy via SDF (SuiteScript Definition Framework) bundles. The PRD template's §13 tracks bundle composition: script files, custom records/fields/lists, roles, saved searches, workflows.

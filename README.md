@@ -123,12 +123,31 @@ Template มาตรฐานสำหรับเขียน Product Requirem
 
 ---
 
+## GitHub Repository Checklist
+
+ทุก project ที่ push ขึ้น GitHub **ต้องมี `README.md`** ที่หน้าแรก repo อ่านแล้วเข้าใจได้ทันที
+
+| ส่วน | เนื้อหา |
+|---|---|
+| ชื่อ + คำอธิบาย | project ทำอะไร แก้ปัญหาอะไร |
+| ลิงก์ PRD | ตาราง PRD ID / version / status พร้อม link |
+| ขอบเขต Phase ปัจจุบัน | bullet list In Scope |
+| Tech Stack | ตาราง Layer / Technology |
+| Skills ที่ใช้ | ลิงก์ไป `kingcomen/netsuite-skill` + อธิบาย skill ไหนใช้ทำอะไร |
+
+> ห้าม push ขึ้น GitHub โดยไม่มี README.md
+
+---
+
 ## การใช้งานร่วมกัน
 
 ```
 PRD ใหม่
   ├── มี Query?     → ใช้ ns-suiteql.md (generate) + netsuite-suiteql.md (verify)
   └── มี Custom UI? → ใช้ teibto-ui-component.md (components + patterns)
+
+Push ขึ้น GitHub
+  └── ต้องมี README.md ครบ 5 ส่วน (ดู GitHub Repository Checklist)
 ```
 
 ---
