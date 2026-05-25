@@ -6,6 +6,18 @@ Skills, templates, และ UI component reference ที่ใช้ร่ว�
 
 ---
 
+## External Skill References
+
+Skills จากภายนอกที่ใช้อ้างอิงและบูรณาการเข้ากับ workflow ของ Teibto:
+
+| Author | Repository | ใช้สำหรับ |
+|---|---|---|
+| **Andrej Karpathy** | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | Karpathy-style coding guidelines |
+| **Matt Pocock** | [mattpocock/skills](https://github.com/mattpocock/skills/) | TypeScript & developer tooling |
+| **Thananon (9arm)** | [thananon/9arm-skills](https://github.com/thananon/9arm-skills) | Thai developer skills |
+
+---
+
 ## โครงสร้าง
 
 ```
