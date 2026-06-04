@@ -1,4 +1,4 @@
-# netsuite-skill
+# king-netsuite-skill
 
 Claude Code skill library สำหรับ NetSuite development ของ Teibto
 
@@ -21,7 +21,7 @@ Skills จากภายนอกที่ใช้อ้างอิงแล�
 ## โครงสร้าง
 
 ```
-netsuite-skill/
+king-netsuite-skill/
 ├── CLAUDE.md                        ← Claude Code reads this first
 ├── Suiteql/
 │   ├── netsuite-suiteql.md          ← SuiteQL syntax reference
@@ -145,7 +145,7 @@ Template มาตรฐานสำหรับเขียน Product Requirem
 | ลิงก์ PRD | ตาราง PRD ID / version / status พร้อม link |
 | ขอบเขต Phase ปัจจุบัน | bullet list In Scope |
 | Tech Stack | ตาราง Layer / Technology |
-| Skills ที่ใช้ | ลิงก์ไป `kingcomen/netsuite-skill` + อธิบาย skill ไหนใช้ทำอะไร |
+| Skills ที่ใช้ | ลิงก์ไป `kingcomen/king-netsuite-skill` + อธิบาย skill ไหนใช้ทำอะไร |
 
 > ห้าม push ขึ้น GitHub โดยไม่มี README.md
 

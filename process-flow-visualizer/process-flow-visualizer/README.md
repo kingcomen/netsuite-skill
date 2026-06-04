@@ -4,7 +4,7 @@ A Claude Code **skill** that turns any multi-step process, workflow, pipeline, o
 into **one polished, self-contained interactive HTML page** — no build step, no external JS
 (only Google Fonts). Drop the `.skill` into Claude Code and ask it to "วาด/visualize" a flow.
 
-> เป็น skill ของชุด [`kingcomen/netsuite-skill`](https://github.com/kingcomen/netsuite-skill) —
+> เป็น skill ของชุด [`kingcomen/king-netsuite-skill`](https://github.com/kingcomen/king-netsuite-skill) —
 > ใช้สร้างหน้าอธิบาย process (ERP / NetSuite / business flow) ให้ดูเป็นภาพแล้วคลิกเล่นได้ในไฟล์เดียวจบ
 
 ## What you get — one process, up to four synchronized tabs
@@ -55,14 +55,14 @@ A `.skill` is a zip bundle — installing means unpacking it into Claude Code's 
 
 **Git Bash / macOS / Linux**
 ```bash
-git clone git@github.com:kingcomen/netsuite-skill.git
-unzip -o "netsuite-skill/process-flow-visualizer/process-flow-visualizer.skill" -d ~/.claude/skills/
+git clone git@github.com:kingcomen/king-netsuite-skill.git
+unzip -o "king-netsuite-skill/process-flow-visualizer/process-flow-visualizer.skill" -d ~/.claude/skills/
 ```
 
 **Windows PowerShell** (`Expand-Archive` needs a `.zip` name, so copy first)
 ```powershell
-git clone git@github.com:kingcomen/netsuite-skill.git
-Copy-Item "netsuite-skill\process-flow-visualizer\process-flow-visualizer.skill" "$env:TEMP\pfv.zip"
+git clone git@github.com:kingcomen/king-netsuite-skill.git
+Copy-Item "king-netsuite-skill\process-flow-visualizer\process-flow-visualizer.skill" "$env:TEMP\pfv.zip"
 Expand-Archive "$env:TEMP\pfv.zip" "$env:USERPROFILE\.claude\skills\" -Force
 ```
 
@@ -80,6 +80,6 @@ Claude copies `template.html`, fills it from your process, runs the quality gate
 
 ## Related skills
 
-Part of [`kingcomen/netsuite-skill`](https://github.com/kingcomen/netsuite-skill):
+Part of [`kingcomen/king-netsuite-skill`](https://github.com/kingcomen/king-netsuite-skill):
 - `/ns-suiteql`, `/netsuite-suiteql` — SuiteQL generation + reference
 - `/teibto-ui-component` — Teibto Design System Web Components for Suitelet UI

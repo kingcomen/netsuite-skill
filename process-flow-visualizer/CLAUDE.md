@@ -94,6 +94,6 @@ zip -r process-flow-visualizer.skill process-flow-visualizer/   # from a dir con
 
 ## Relationship to the parent workspace
 
-This skill lives inside the `netsuite-skill` workspace (see `../CLAUDE.md` for NetSuite naming
+This skill lives inside the `king-netsuite-skill` workspace (see `../CLAUDE.md` for NetSuite naming
 conventions, the PRD workflow, and the GitHub README requirement). Those rules apply if this skill is
 ever pushed as its own repo — a README.md is required before pushing to GitHub.

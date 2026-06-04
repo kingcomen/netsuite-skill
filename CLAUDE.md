@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This is the **Teibto NetSuite skill library** (published as GitHub `kingcomen/netsuite-skill`), owned by Wichit Wongta. The tracked repo contains **no SuiteScript source** — it is a set of reusable Claude Code skills, conventions, and a PRD template that separate NetSuite *consumer* projects pull in. The naming, governance, and deployment rules below describe what those consumer projects must follow.
+This is the **Teibto NetSuite skill library** (published as GitHub `kingcomen/king-netsuite-skill`), owned by Wichit Wongta. The tracked repo contains **no SuiteScript source** — it is a set of reusable Claude Code skills, conventions, and a PRD template that separate NetSuite *consumer* projects pull in. The naming, governance, and deployment rules below describe what those consumer projects must follow.
 
 Everything tracked is Markdown (+ one logo) — there is **no build, lint, or test step**.
 
@@ -65,7 +65,7 @@ Workflow: a new PRD with a **Query** → `/ns-suiteql` (generate) + `/netsuite-s
 2. **ลิงก์ PRD** — ตาราง PRD ID, version, status พร้อม link ไปไฟล์จริง
 3. **ขอบเขต** — In Scope ของ Phase ปัจจุบัน (bullet list)
 4. **Tech Stack** — ตาราง Layer / Technology
-5. **Skills ที่ใช้** — ลิงก์ไป `kingcomen/netsuite-skill` พร้อมระบุว่า skill ไหนใช้ทำอะไร
+5. **Skills ที่ใช้** — ลิงก์ไป `kingcomen/king-netsuite-skill` พร้อมระบุว่า skill ไหนใช้ทำอะไร
 
 > README ต้องเป็นสิ่งแรกที่อ่านก่อนเปิด codebase — ห้าม push ขึ้น GitHub โดยไม่มี README.md
 
