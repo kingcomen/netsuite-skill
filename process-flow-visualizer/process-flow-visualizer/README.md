@@ -48,12 +48,35 @@ persistent 4-lane colour legend. เลือกใช้เฉพาะแท�
 | `evals/evals.json` | Eval prompts + assertions used to validate the skill |
 | `../process-flow-visualizer.skill` | Packaged, installable bundle |
 
-## Install / use
+## Install
 
-1. Install the bundled `process-flow-visualizer.skill` in Claude Code.
-2. Ask, e.g. *"วาด flow ของ order-to-cash แบบมี simulation และ step by step"* or
-   *"ทำ architecture high-level + process flow ของ approval workflow ให้ดูเป็นภาพ มี dark/light"*.
-3. Claude copies `template.html`, fills it from your process, runs the quality gate, and hands back one `.html`.
+A `.skill` is a zip bundle — installing means unpacking it into Claude Code's skills folder
+(`~/.claude/skills/`). Copy-paste one block:
+
+**Git Bash / macOS / Linux**
+```bash
+git clone git@github.com:kingcomen/netsuite-skill.git
+unzip -o "netsuite-skill/process-flow-visualizer/process-flow-visualizer.skill" -d ~/.claude/skills/
+```
+
+**Windows PowerShell** (`Expand-Archive` needs a `.zip` name, so copy first)
+```powershell
+git clone git@github.com:kingcomen/netsuite-skill.git
+Copy-Item "netsuite-skill\process-flow-visualizer\process-flow-visualizer.skill" "$env:TEMP\pfv.zip"
+Expand-Archive "$env:TEMP\pfv.zip" "$env:USERPROFILE\.claude\skills\" -Force
+```
+
+Both land the skill at `~/.claude/skills/process-flow-visualizer/`. **Restart Claude Code**
+(or run `/doctor`) so it loads the new skill.
+
+> Already cloned the repo? Skip `git clone` and run only the `unzip` / `Expand-Archive` line,
+> pointing at your local `process-flow-visualizer/process-flow-visualizer.skill`.
+
+## Use
+
+Ask Claude, e.g. *"วาด flow ของ order-to-cash แบบมี simulation และ step by step"* or
+*"ทำ architecture high-level + process flow ของ approval workflow ให้ดูเป็นภาพ มี dark/light"*.
+Claude copies `template.html`, fills it from your process, runs the quality gate, and hands back one `.html`.
 
 ## Related skills
 
