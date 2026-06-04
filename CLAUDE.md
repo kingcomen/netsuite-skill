@@ -4,11 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This is a NetSuite development workspace owned by Wichit Wongta. It holds project PRDs and SuiteScript source for NetSuite customizations. The primary planning artifact is `PRD_TEMPLATE.md`, which is forked and filled in for each feature/module.
+This is the **Teibto NetSuite skill library** (published as GitHub `kingcomen/netsuite-skill`), owned by Wichit Wongta. The tracked repo contains **no SuiteScript source** — it is a set of reusable Claude Code skills, conventions, and a PRD template that separate NetSuite *consumer* projects pull in. The naming, governance, and deployment rules below describe what those consumer projects must follow.
+
+Everything tracked is Markdown (+ one logo) — there is **no build, lint, or test step**.
+
+Tracked layout:
+- `Suiteql/` — SuiteQL skills (`netsuite-suiteql.md` syntax reference, `ns-suiteql.md` query generator)
+- `UI/teibto-ui-component.md` — Teibto Design System (TBT-DS) Web Component reference
+- `prd/PRD_TEMPLATE.md` — the planning template that's forked per feature/module
+- `README.md` — the public-facing index for the GitHub repo
+
+Untracked sibling dirs (`Architecture-Flow-Diagram/`, `process-flow-visualizer/`) are **separate, self-contained skill projects**, each with its own `CLAUDE.md` — treat them independently.
 
 ## PRD Workflow
 
 Copy `PRD_TEMPLATE.md` → rename to `PRD-{ID}-{slug}.md` (e.g. `PRD-TEIBTO-IF-001-lot-tracking.md`) → fill in sections. The PRD ID format is `{PROJECT}-{MODULE}-{NNN}`.
+
+**Diagram ใน PRD ใช้ Mermaid เสมอ** (` ```mermaid ` blocks) — ห้ามใช้ ASCII art. Relationship → `erDiagram`, flow/user flow → `flowchart`. GitHub render เป็นภาพอัตโนมัติ
 
 ## NetSuite Naming Conventions (Critical)
 
@@ -36,11 +48,14 @@ Always track governance units in technical designs:
 | Suitelet | 1,000 |
 | Map/Reduce (map phase) | 1,000 |
 
-## SuiteQL Skills
+## Skills
 
-Use the built-in Claude Code skills for any SuiteQL work:
-- `/ns-suiteql` — generate a SuiteQL query with automatic field guard against the 2026.1 schema
+Use the built-in Claude Code skills rather than reinventing these patterns:
+- `/ns-suiteql` — generate a SuiteQL query with automatic field guard against the 2026.1 schema. Run **before** writing raw SuiteQL.
 - `/netsuite-suiteql` — SuiteQL syntax reference (Oracle SQL vs SQL-92 rules, joins, BUILTIN.*, pagination)
+- `/teibto-ui-component` — TBT-DS Web Components for any custom-HTML Suitelet UI (`tbt-*` tags, theming, governance). Use for all Teibto Suitelet UI work.
+
+Workflow: a new PRD with a **Query** → `/ns-suiteql` (generate) + `/netsuite-suiteql` (verify); with **Custom UI** → `/teibto-ui-component`.
 
 ## GitHub Repository Checklist
 

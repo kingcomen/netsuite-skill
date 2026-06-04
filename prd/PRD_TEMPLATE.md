@@ -24,7 +24,14 @@
 ## 2. Business Context
 
 ### 2.1 Current State
-[อธิบาย flow ปัจจุบัน — ใส่ diagram ถ้าซับซ้อน]
+[อธิบาย flow ปัจจุบัน — ถ้าซับซ้อนให้ใส่ Mermaid diagram]
+```mermaid
+flowchart LR
+    A[ลูกค้าสั่งซื้อ] --> B[คีย์ Sales Order]
+    B --> C{เช็คสต็อก}
+    C -->|มี| D[Fulfill]
+    C -->|ไม่มี| E[รอของ]
+```
 
 ### 2.2 Pain Points
 - [ปัญหา 1] — quantify: เสีย X ชม./วัน × Y คน = Z ชม./สัปดาห์
@@ -135,8 +142,17 @@
 - Permissions: [matrix]
 
 ### 6.6 Relationship Diagram
-```
-[ASCII or Mermaid diagram]
+ใช้ Mermaid `erDiagram` แสดงความสัมพันธ์ระหว่าง native + custom records
+```mermaid
+erDiagram
+    SALES_ORDER ||--o{ ITEM_FULFILLMENT : creates
+    ITEM_FULFILLMENT ||--|{ CUSTOMRECORD_XXX_SCAN_LOG : logs
+    ITEM ||--o{ CUSTOMRECORD_XXX_SCAN_LOG : references
+    CUSTOMRECORD_XXX_SCAN_LOG {
+        select custrecord_xxx_item FK
+        text custrecord_xxx_lot
+        datetime custrecord_xxx_scanned
+    }
 ```
 
 ## 7. Technical Design (High-Level)
@@ -184,10 +200,14 @@
 > ห้ามใช้ raw HTML primitives เมื่อมี `tbt-*` component แล้ว
 
 ### 8.3 User Flow
-```
-[Start] → [Action 1] → [Action 2] → [End]
-              ↓
-          [Error path]
+ใช้ Mermaid `flowchart` แสดงเส้นทางผู้ใช้ (รวม error path)
+```mermaid
+flowchart TD
+    Start([เปิดหน้า]) --> A[กรอกข้อมูล]
+    A --> V{Validate}
+    V -->|ผ่าน| S[บันทึก]
+    V -->|ไม่ผ่าน| E[แสดง error] --> A
+    S --> End([เสร็จ])
 ```
 
 ### 8.4 Error Handling UX
