@@ -1,0 +1,5 @@
+# Eval / iteration scratch — screenshots, generated HTML, scripts, snapshots, logs
+process-flow-visualizer-workspace/
+
+# Delivery wrapper (redundant with the extracted skill tree)
+files (*).zip

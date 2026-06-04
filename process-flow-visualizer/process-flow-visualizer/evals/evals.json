@@ -1,0 +1,85 @@
+{
+  "skill_name": "process-flow-visualizer",
+  "evals": [
+    {
+      "id": 0,
+      "name": "full-4tab-procure-to-pay",
+      "prompt": "ช่วยทำหน้า HTML interactive อธิบาย process procure-to-pay ของบริษัทผมหน่อย ขั้นตอนคือ สร้างใบขอซื้อ (PR) → ออกใบสั่งซื้อ (PO) → รับสินค้า (Item Receipt) → ตั้งหนี้ตามใบแจ้งหนี้ (Vendor Bill) → จ่ายเงิน (Payment) อยากได้ครบทั้ง architecture ภาพรวม, process flow รายละเอียดแต่ละขั้น, simulation ที่กดเล่นดู timeline ได้ว่าเอกสารกับยอดเงินค่อยๆ โผล่ตามเวลา และ step by step เดินทีละขั้น ใส่ dark/light toggle ด้วย ยอดเงินใช้เป็นบาท",
+      "expected_output": "ไฟล์ .html เดียวจบ มี 4 แท็บ (Architecture / Process Flow / Simulation / Step by Step) ทำงานครบ, dark/light toggle, glossary, ระบบสี 4 lane, EVENTS+STEPS เต็ม, หน่วยเงินเป็นบาท, ไม่มี <<ADJUST>> เหลือ",
+      "files": [],
+      "assertions": [
+        "Output is a single self-contained .html file with no external <script src> except Google Fonts",
+        "No <<ADJUST>> markers remain anywhere in the file",
+        "Embedded JavaScript passes node --check (valid syntax)",
+        "DOM tags are balanced: <div> count equals </div>, <section> equals </section>",
+        "All four tabs are present and wired: Architecture, Process Flow, Simulation, Step by Step",
+        "EVENTS array is populated with real timeline events (not the template stub)",
+        "STEPS array is populated and walks the full PR to PO to Item Receipt to Vendor Bill to Payment sequence",
+        "Dark/light theme toggle is present and persists via localStorage",
+        "The 4-lane color system uses --cyan/--violet/--green/--amber referenced via var()",
+        "Monetary amounts use the Baht symbol, not abstract units like 'u'",
+        "Glossary modal includes the .modal[hidden]{display:none} fix",
+        "No var() appears inside an SVG presentation attribute such as stroke=\"var(...)\""
+      ]
+    },
+    {
+      "id": 1,
+      "name": "partial-arch-flow-approval",
+      "prompt": "ขอ diagram ของ approval workflow ใบขอซื้อบริษัทเรา เป็นหน้าเว็บที่ดูแล้วเข้าใจเลย ขั้นตอน: พนักงานยื่นคำขอ → หัวหน้าแผนกอนุมัติ → ฝ่ายจัดซื้อตรวจสอบราคา → ถ้าวงเงินเกิน 100,000 บาทต้องให้ผู้จัดการอนุมัติอีกชั้น เอาแค่ architecture high-level กับ process flow รายละเอียดพอ ไม่ต้องมี simulation หรือ step by step ขอ dark mode ด้วย",
+      "expected_output": "ไฟล์ .html เดียว มีแค่ 2 แท็บ (Architecture + Process Flow) — แท็บ Simulation และ Step by Step ถูกลบทั้ง button และ panel, มี architecture tiers, มี decision branch สำหรับเงื่อนไขวงเงิน >100,000, dark/light toggle, ไม่มี <<ADJUST>> เหลือ",
+      "files": [],
+      "assertions": [
+        "Output is a single self-contained .html file with no external <script src> except Google Fonts",
+        "No <<ADJUST>> markers remain anywhere in the file",
+        "Embedded JavaScript passes node --check (valid syntax)",
+        "DOM tags are balanced: <div> count equals </div>, <section> equals </section>",
+        "Exactly two tabs are present: Architecture and Process Flow",
+        "The Simulation tab is fully removed: no sim tab button AND no #tab-sim panel remain",
+        "The Step by Step tab is fully removed: no steps tab button AND no #tab-steps panel remain",
+        "A decision branch / fork is present for the over-100,000 Baht manager-approval threshold",
+        "Dark/light theme toggle is present and persists via localStorage",
+        "The 4-lane color system uses --cyan/--violet/--green/--amber referenced via var()",
+        "No var() appears inside an SVG presentation attribute such as stroke=\"var(...)\""
+      ]
+    },
+    {
+      "id": 2,
+      "name": "minimal-flow-steps-rma",
+      "prompt": "ทำหน้า walkthrough ขั้นตอนการรับคืนสินค้า (RMA) ให้ทีม support ดู: ลูกค้าแจ้งคืน → ออกเลข RMA → รับของกลับเข้าคลัง → ตรวจสภาพ → คืนเงินหรือเปลี่ยนของ อยากได้แบบ process flow กับ step by step เดินทีละขั้นพอ ไม่ต้อง architecture หรือ simulation",
+      "expected_output": "ไฟล์ .html เดียว มีแค่ 2 แท็บ (Process Flow + Step by Step) — แท็บ Architecture และ Simulation ถูกลบ, STEPS array เต็มเดินได้ถึงขั้นสุดท้าย (Next disable), prev/next + arrow keys ใช้ได้, ไม่มี <<ADJUST>> เหลือ",
+      "files": [],
+      "assertions": [
+        "Output is a single self-contained .html file with no external <script src> except Google Fonts",
+        "No <<ADJUST>> markers remain anywhere in the file",
+        "Embedded JavaScript passes node --check (valid syntax)",
+        "DOM tags are balanced: <div> count equals </div>, <section> equals </section>",
+        "Exactly two tabs are present: Process Flow and Step by Step",
+        "The Architecture tab is fully removed: no arch tab button AND no #tab-arch panel remain",
+        "The Simulation tab is fully removed: no sim tab button AND no #tab-sim panel remain",
+        "STEPS array is populated and walks the full RMA sequence to the final step",
+        "Dark/light theme toggle is present and persists via localStorage",
+        "No var() appears inside an SVG presentation attribute such as stroke=\"var(...)\""
+      ]
+    },
+    {
+      "id": 3,
+      "name": "stress-6domain-order-to-cash",
+      "prompt": "วาด process order-to-cash ตั้งแต่ลูกค้าสั่งซื้อจนเก็บเงินได้ ครอบคลุมหลายแผนก: ฝ่ายขายรับออเดอร์ → ฝ่ายเครดิตตรวจวงเงินลูกค้า → คลังจัดของ → ฝ่ายขนส่งจัดส่ง → ฝ่ายการเงินวางบิล → ฝ่ายบัญชีรับชำระและกระทบยอด อยากได้ทั้ง architecture, process flow, simulation, step by step ครบ ใส่ dark/light ด้วย เงินเป็นบาท",
+      "expected_output": "ไฟล์ .html เดียวครบ 4 แท็บ แต่ที่สำคัญคือมี 6 แผนก ซึ่งเกินระบบสี 4 lane — ดูว่า skill จัดการยังไง (ยุบ/จัดกลุ่มแผนกให้เหลือ ≤4 lane อย่างมีเหตุผล หรือพังเพราะสีซ้ำความหมาย) สีต้องไม่ถูกใช้สื่อความหมายต่างกันในที่เดียวกัน, ไม่มี <<ADJUST>> เหลือ",
+      "files": [],
+      "assertions": [
+        "Output is a single self-contained .html file with no external <script src> except Google Fonts",
+        "No <<ADJUST>> markers remain anywhere in the file",
+        "Embedded JavaScript passes node --check (valid syntax)",
+        "DOM tags are balanced: <div> count equals </div>, <section> equals </section>",
+        "All four tabs are present: Architecture, Process Flow, Simulation, Step by Step",
+        "Despite 6 business departments, no more than 4 distinct lane colors are used (4-color rule honored)",
+        "No single color is reused to mean two different lanes/domains within the same view",
+        "The 6 departments are consolidated/grouped into <=4 lanes in a reasonable way",
+        "Dark/light theme toggle is present and persists via localStorage",
+        "Monetary amounts use the Baht symbol, not abstract units like 'u'",
+        "No var() appears inside an SVG presentation attribute such as stroke=\"var(...)\""
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import → Landed Cost Process Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="dark"]{
+    --bg:#0d1521;
+    --bg2:#111d2e;
+    --panel:#16263b;
+    --panel-2:#1b2f49;
+    --line:#2c486b;
+    --ink:#e9f1fb;
+    --muted:#8aa4c4;
+    --faint:#5d799b;
+    --cyan:#3fd0d8;
+    --amber:#f6b545;
+    --green:#46d18a;
+    --violet:#9d8cff;
+    --red:#ff7a7a;
+    --on-accent:#0d1521;
+    --grid:rgba(63,208,216,.06);
+    --glow1:rgba(63,208,216,.10);
+    --glow2:rgba(157,140,255,.10);
+  }
+  [data-theme="light"]{
+    --bg:#dce5f1;
+    --bg2:#ffffff;
+    --panel:#ffffff;
+    --panel-2:#eaf1f9;
+    --line:#aec3dd;
+    --ink:#0e2138;
+    --muted:#4d6685;
+    --faint:#7890ab;
+    --cyan:#0a8c97;
+    --amber:#b06c05;
+    --green:#0c8551;
+    --violet:#5a40c8;
+    --red:#cd3b3b;
+    --on-accent:#ffffff;
+    --grid:rgba(12,110,130,.10);
+    --glow1:rgba(10,140,151,.16);
+    --glow2:rgba(90,64,200,.13);
+  }
+  /* Light mode needs help dark doesn't: white panels + dark-tuned shadows read flat.
+     Lift cards and give transparent/dashed external boxes a surface. Dark is untouched. */
+  [data-theme="light"] .stage,
+  [data-theme="light"] .step,
+  [data-theme="light"] .abox,
+  [data-theme="light"] .aengine,
+  [data-theme="light"] .sim-pipe,
+  [data-theme="light"] .sim-controls,
+  [data-theme="light"] .sbs-card,
+  [data-theme="light"] .ss-card,
+  [data-theme="light"] .gloss-box{
+    box-shadow:0 1px 2px rgba(14,33,56,.05), 0 12px 28px -20px rgba(14,33,56,.30);
+  }
+  [data-theme="light"] .abox.ext{ background:var(--panel-2); border-color:#93abca; }
+  [data-theme="light"] .abox.ext b{ color:var(--ink); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Noto Sans Thai','Archivo',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, var(--glow1), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, var(--glow2), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    transition:background-color .35s ease,color .35s ease;
+    min-height:100vh;
+    padding:26px 24px 70px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(circle at 50% 30%,#000 30%,transparent 85%);
+  }
+  .wrap{max-width:100%;width:100%;margin:0 auto;position:relative;z-index:1}
+
+  /* theme toggle */
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+  .topbar header{flex:1 1 420px;margin-bottom:0}
+  .top-ctrls{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;flex:none}
+  .theme-toggle{display:flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.04em;
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:999px;
+    padding:9px 15px 9px 12px;cursor:pointer;transition:.25s;box-shadow:0 6px 18px -10px rgba(0,0,0,.4)}
+  .theme-toggle:hover{border-color:var(--amber)}
+  .tt-ic{font-size:14px;line-height:1}
+  .stage,.outputs,.incoterm-box,.sim-controls,.sim-pipe,.sim-col,.sbs-card,.theme-toggle,
+  .step,.ocell,.bcard,.doc,.ctrl,.sp,.ibt,.ic-row{transition:background-color .35s ease,border-color .35s ease,color .35s ease,transform .25s ease}
+
+  /* ---------- Header ---------- */
+  header{margin-bottom:46px;animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--cyan);margin-bottom:14px;display:flex;
+    align-items:center;gap:10px;
+  }
+  .kicker::before{content:"";width:30px;height:1px;background:var(--cyan);display:inline-block}
+  h1{
+    font-family:'Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;
+    font-size:clamp(28px,4.6vw,50px);line-height:1.02;
+  }
+  h1 .em{color:var(--amber)}
+  .sub{color:var(--muted);margin-top:14px;max-width:680px;font-size:15px;line-height:1.65}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* ---------- Stage ---------- */
+  .stage{
+    position:relative;margin-bottom:22px;border:1px solid var(--line);border-radius:18px;
+    background:linear-gradient(180deg,var(--panel),var(--bg2));
+    overflow:hidden;opacity:0;transform:translateY(26px);
+    animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .stage:nth-of-type(1){animation-delay:.10s}
+  .stage:nth-of-type(2){animation-delay:.22s}
+  .stage:nth-of-type(3){animation-delay:.34s}
+  .stage:nth-of-type(4){animation-delay:.46s}
+  .stage::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--accent,var(--cyan))}
+  .s1{--accent:var(--cyan)} .s2{--accent:var(--violet)} .s3{--accent:var(--green)} .s4{--accent:var(--amber)}
+
+  .stage-head{display:flex;align-items:center;gap:18px;padding:22px 26px;cursor:default;flex-wrap:wrap}
+  .num{
+    flex:none;width:54px;height:54px;border-radius:14px;display:grid;place-items:center;
+    font-family:'Archivo',sans-serif;font-weight:800;font-size:22px;color:var(--on-accent);
+    background:var(--accent);box-shadow:0 8px 24px -8px var(--accent);
+  }
+  .stage-title{flex:1;min-width:240px}
+  .stage-title .en{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+  .stage-title h2{font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.01em}
+  .stage-title p{color:var(--muted);font-size:13px;margin-top:4px;max-width:560px;line-height:1.5}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 10px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .tag.hot{color:var(--amber);border-color:rgba(246,181,69,.5);background:rgba(246,181,69,.08)}
+
+  .stage-body{padding:0 26px 26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+
+  .step{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;
+    transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+  }
+  .step:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 16px 34px -18px var(--accent)}
+  .step .sh{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+  .step .sn{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);
+    border:1px solid var(--accent);border-radius:6px;padding:2px 6px;flex:none}
+  .step h3{font-size:14px;font-weight:600;line-height:1.3}
+  .step ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .step li{font-size:12.5px;color:var(--muted);line-height:1.45;padding-left:15px;position:relative}
+  .step li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;
+    background:var(--accent);opacity:.7}
+  .fields{margin-top:12px;display:flex;flex-wrap:wrap;gap:5px}
+  .field{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);
+    background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:5px;padding:3px 7px}
+
+  /* connector */
+  .arrow{display:flex;justify-content:center;margin:-2px 0 20px;position:relative;z-index:2}
+  .arrow svg{filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+  .arrow .lbl{position:absolute;top:50%;left:calc(50% + 34px);transform:translateY(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);
+    background:var(--bg);padding:3px 10px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+
+  /* ---------- Custom script callout ---------- */
+  .script-box{
+    margin-top:6px;grid-column:1/-1;border:1px dashed rgba(246,181,69,.55);border-radius:14px;
+    background:linear-gradient(135deg,rgba(246,181,69,.07),rgba(246,181,69,.02));padding:20px 22px;
+  }
+  .script-box .sbh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .script-box .sbh .chip{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--on-accent);background:var(--amber);padding:4px 9px;border-radius:6px;font-weight:700}
+  .script-box .sbh h3{font-size:15px;font-weight:700;color:var(--amber)}
+  .pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0}
+  .pcell{position:relative;padding:14px 16px;border-right:1px solid rgba(246,181,69,.18)}
+  .pcell:last-child{border-right:none}
+  .pcell .pn{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);margin-bottom:6px}
+  .pcell h4{font-size:13px;font-weight:600;margin-bottom:6px;line-height:1.3}
+  .pcell p{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .basis{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+  .basis .b{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:5px 11px;border-radius:999px;
+    border:1px solid rgba(246,181,69,.4);color:var(--amber);background:rgba(246,181,69,.06)}
+
+  /* period decision branch */
+  .branch{margin-top:18px;border-top:1px dashed rgba(246,181,69,.3);padding-top:18px}
+  .pipe-foot{margin-top:18px;border-top:1px dashed rgba(246,181,69,.3);padding-top:6px}
+  .bcond{display:flex;align-items:center;gap:12px;margin-bottom:16px;justify-content:center;text-align:center}
+  .diamond{color:var(--amber);font-size:20px;line-height:1}
+  .bq{font-family:'Noto Sans Thai',sans-serif;font-weight:700;font-size:14px;color:var(--amber)}
+  .bnote{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px}
+  .boutcomes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .bcard{border-radius:12px;padding:16px;border:1px solid var(--line);background:var(--panel-2);position:relative}
+  .bcard.open{border-color:rgba(70,209,138,.5);background:linear-gradient(135deg,rgba(70,209,138,.08),transparent)}
+  .bcard.closed{border-color:rgba(255,122,122,.45);background:linear-gradient(135deg,rgba(255,122,122,.07),transparent)}
+  .bh{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+  .bcard h4{font-size:13px;font-weight:600;line-height:1.35}
+  .bbadge{flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;
+    padding:3px 8px;border-radius:6px;color:var(--on-accent)}
+  .bbadge.ok{background:var(--green)} .bbadge.no{background:var(--red)}
+  .bcard ul{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:11px}
+  .bcard li{font-size:12px;color:var(--muted);line-height:1.45;padding-left:14px;position:relative}
+  .bcard.open li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--green);opacity:.8}
+  .bcard.closed li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--red);opacity:.8}
+
+  /* optional step + A/P options */
+  .step.opt{border-style:dashed;border-color:rgba(63,208,216,.4)}
+  .optbadge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.12em;
+    color:var(--cyan);border:1px solid rgba(63,208,216,.5);border-radius:5px;padding:2px 6px;background:rgba(63,208,216,.07)}
+  .opt-box{grid-column:1/-1;border:1px solid rgba(70,209,138,.4);border-radius:14px;
+    background:linear-gradient(135deg,rgba(70,209,138,.06),transparent);padding:20px 22px}
+  .chip.ap{background:var(--green)}
+  .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:6px}
+  .ocell{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px}
+  .ocell .on{font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;color:var(--green);
+    width:26px;height:26px;border-radius:7px;display:grid;place-items:center;border:1px solid rgba(70,209,138,.5);
+    background:rgba(70,209,138,.08);margin-bottom:9px}
+  .ocell h4{font-size:13px;font-weight:600;margin-bottom:6px;line-height:1.3}
+  .ocell p{font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:9px}
+  .opt-note{margin-top:12px;font-size:11.5px;color:var(--muted);line-height:1.5;
+    border-top:1px dashed rgba(70,209,138,.25);padding-top:12px}
+  .opt-note b{color:var(--green)}
+
+  /* Incoterm matrix */
+  .incoterm-box{position:relative;margin:0 0 22px;border:1px solid rgba(63,208,216,.4);border-radius:18px;
+    background:linear-gradient(180deg,rgba(63,208,216,.05),var(--bg2));padding:24px 26px}
+  .ib-head .en{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:6px}
+  .ib-head h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.01em;margin-bottom:16px}
+  .ib-hint{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--cyan);margin:-8px 0 14px}
+  .ib-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .ibt{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;letter-spacing:.06em;
+    border:1px solid var(--line);background:var(--panel-2);color:var(--muted);border-radius:9px;padding:9px 16px;cursor:pointer;transition:.2s}
+  .ibt:hover{color:var(--ink);border-color:var(--cyan)}
+  .ibt.active{background:var(--cyan);color:var(--on-accent);border-color:var(--cyan);box-shadow:0 6px 18px -8px var(--cyan)}
+  .ib-body{display:grid;grid-template-columns:1.15fr 1fr;gap:18px}
+  .ib-matrix{display:flex;flex-direction:column;gap:7px}
+  .ic-row{display:flex;align-items:center;gap:12px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:9px;padding:11px 14px;transition:.25s}
+  .ic-row.buyer{border-color:rgba(246,181,69,.45);background:linear-gradient(90deg,rgba(246,181,69,.08),var(--panel-2))}
+  .ic-lab{flex:1;font-size:12.5px;color:var(--ink)}
+  .ic-row:not(.buyer) .ic-lab{color:var(--muted)}
+  .ic-badge{flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px}
+  .ic-badge.b{background:var(--amber);color:var(--on-accent)}
+  .ic-badge.s{background:transparent;color:var(--faint);border:1px solid var(--line)}
+  .ib-side{display:flex;flex-direction:column;gap:14px}
+  .ib-pool{background:var(--panel-2);border:1px solid rgba(246,181,69,.35);border-radius:12px;padding:15px}
+  .ibp-h{display:flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;margin-bottom:11px}
+  .ibp-dot{width:9px;height:9px;border-radius:3px;background:var(--amber)}
+  .ibp-list{display:flex;flex-wrap:wrap;gap:6px}
+  .ibp-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);background:rgba(246,181,69,.08);
+    border:1px solid rgba(246,181,69,.4);border-radius:6px;padding:4px 9px}
+  .ibp-empty{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green)}
+  .ib-prep{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .ib-prep b{display:block;font-size:12.5px;color:var(--cyan);margin-bottom:7px}
+  .ib-prep p{font-size:12px;color:var(--muted);line-height:1.55}
+  .ib-note{margin-top:16px;font-size:11.5px;color:var(--muted);line-height:1.55;
+    border-top:1px dashed rgba(63,208,216,.25);padding-top:13px}
+  .ib-note b{color:var(--cyan)}
+
+  /* ---------- Output ---------- */
+  .outputs{margin-top:34px;border:1px solid var(--line);border-radius:18px;
+    background:linear-gradient(180deg,var(--panel),var(--bg2));padding:24px 26px;
+    opacity:0;animation:rise .7s cubic-bezier(.2,.7,.2,1) .58s forwards}
+  .outputs .oh{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--green);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .outputs .oh::before{content:"";width:24px;height:1px;background:var(--green)}
+  .ogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .ocard{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .ocard h4{font-size:13.5px;font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+  .ocard h4 .ic{width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .ocard p{font-size:12px;color:var(--muted);line-height:1.5}
+
+  footer{margin-top:48px;padding-top:22px;border-top:1px solid var(--line);text-align:center;font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--faint);letter-spacing:.08em}
+
+  @keyframes rise{to{opacity:1;transform:translateY(0)}}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:8px;margin-bottom:30px;border-bottom:1px solid var(--line);padding-bottom:0}
+  .tab-btn{font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;color:var(--muted);
+    background:none;border:none;border-bottom:2px solid transparent;padding:12px 18px;cursor:pointer;
+    display:flex;align-items:center;gap:9px;transition:color .2s,border-color .2s;margin-bottom:-1px}
+  .tab-btn .tn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint)}
+  .tab-btn:hover{color:var(--ink)}
+  .tab-btn.active{color:var(--cyan);border-color:var(--cyan)}
+  .tab-btn.active .tn{color:var(--cyan)}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block;animation:fade .45s ease both}
+  /* tab meta strip (description + legend) */
+  .tabmeta{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    margin:-18px 0 26px;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .tab-desc{font-size:13px;color:var(--muted);line-height:1.5;flex:1;min-width:240px}
+  .glegend{display:flex;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)}
+  .glegend span{display:inline-flex;align-items:center;gap:7px}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ---------- Simulation ---------- */
+  .sim-intro{margin-bottom:22px}
+  .sim-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .ctrl{font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;border-radius:9px;padding:10px 16px;
+    cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);transition:.2s}
+  .ctrl:hover{border-color:var(--cyan)}
+  .ctrl.primary{background:var(--cyan);color:var(--on-accent);border-color:var(--cyan)}
+  .ctrl.primary:hover{filter:brightness(1.08)}
+  .speed{display:flex;align-items:center;gap:6px;margin-left:auto;font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--muted)}
+  .sp{font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--muted);border-radius:7px;padding:6px 9px;cursor:pointer}
+  .sp.active{color:var(--cyan);border-color:var(--cyan)}
+  .clock{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;
+    background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+  .ck-label{font-size:9px;letter-spacing:.2em;color:var(--faint)}
+  #clock{font-size:15px;font-weight:700;color:var(--amber);min-width:48px;text-align:right}
+
+  .sim-timeline{margin-bottom:26px}
+  .tl-track{position:relative;height:46px;margin-bottom:4px}
+  .tl-track::before{content:"";position:absolute;left:0;right:0;top:21px;height:4px;border-radius:4px;background:var(--panel-2);border:1px solid var(--line)}
+  .tl-fill{position:absolute;left:0;top:21px;height:4px;border-radius:4px;width:0;
+    background:linear-gradient(90deg,var(--cyan),var(--violet),var(--green),var(--amber));transition:width .12s linear}
+  .tl-head{position:absolute;top:15px;left:0;width:16px;height:16px;border-radius:50%;background:#fff;
+    border:3px solid var(--amber);transform:translateX(-50%);box-shadow:0 0 0 4px rgba(246,181,69,.18);transition:left .12s linear;z-index:3}
+  .tl-markers{position:absolute;inset:0}
+  .tl-mark{position:absolute;top:0;transform:translateX(-50%);text-align:center;width:40px}
+  .tl-mark i{display:block;width:9px;height:9px;border-radius:50%;background:var(--faint);margin:17px auto 0;
+    border:2px solid var(--bg);transition:.2s}
+  .tl-mark.hit i{background:var(--accent,var(--amber));box-shadow:0 0 10px var(--accent,var(--amber))}
+  .tl-mark span{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--faint);margin-top:5px;line-height:1.3}
+  .tl-mark.hit span{color:var(--ink)}
+  #scrub{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:transparent;cursor:pointer}
+  #scrub::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--amber);cursor:pointer;border:3px solid var(--bg)}
+  #scrub::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--amber);cursor:pointer;border:3px solid var(--bg)}
+
+  .sim-pipe{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:26px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;overflow-x:auto}
+  .snode{display:flex;align-items:center;gap:11px;flex:none;opacity:.4;transition:.35s;padding:8px 12px;border-radius:10px}
+  .snode.live{opacity:1;background:rgba(255,255,255,.04)}
+  .snode.live .sdot{box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 22%,transparent);animation:pulse 1.1s infinite}
+  .snode.done{opacity:.85}
+  .sdot{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+  .slab b{display:block;font-size:13px;font-weight:600}
+  .slab small{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.06em}
+  .sconn{flex:1;min-width:24px;height:2px;background:var(--line);position:relative;border-radius:2px}
+  .sconn i{position:absolute;left:0;top:50%;transform:translateY(-50%);width:0;height:2px;
+    background:linear-gradient(90deg,var(--cyan),var(--amber));transition:width .5s ease}
+  .sconn.flow i{width:100%}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 26%,transparent)}50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--c) 4%,transparent)}}
+
+  .sim-grid{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:16px}
+  .sim-col{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-height:280px}
+  .col-head{font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;margin-bottom:14px;
+    display:flex;align-items:center;gap:9px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+  .ch-ic{width:9px;height:9px;border-radius:3px}
+  .el-empty{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);padding:18px 4px;text-align:center}
+
+  .event-log{display:flex;flex-direction:column;gap:10px}
+  .el-item{border-left:2px solid var(--accent,var(--cyan));padding:9px 0 9px 13px;animation:slidein .4s ease both}
+  .el-item .el-t{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent,var(--cyan));font-weight:700}
+  .el-item h5{font-size:13px;font-weight:600;margin:3px 0}
+  .el-item p{font-size:11.5px;color:var(--muted);line-height:1.45}
+  @keyframes slidein{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+
+  .doc-tray{display:flex;flex-direction:column;gap:10px}
+  .doc{display:flex;gap:11px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;padding:11px 12px;animation:pop .4s cubic-bezier(.2,1.2,.3,1) both}
+  .doc .dic{flex:none;width:30px;height:36px;border-radius:5px;background:var(--bg);border:1px solid var(--line);
+    position:relative;display:grid;place-items:center;font-size:13px}
+  .doc .dic::after{content:"";position:absolute;top:0;right:0;border-width:0 8px 8px 0;border-style:solid;
+    border-color:var(--line) var(--bg)}
+  .doc .dmeta b{display:block;font-size:12.5px;font-weight:600;line-height:1.3}
+  .doc .dmeta span{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted)}
+  .doc .dtag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:5px;
+    align-self:center;white-space:nowrap}
+  @keyframes pop{from{opacity:0;transform:scale(.92) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+  .data-state{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+  .ds-field{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan);background:rgba(63,208,216,.08);
+    border:1px solid rgba(63,208,216,.3);border-radius:6px;padding:4px 8px;animation:pop .35s ease both}
+
+  .cost-meter{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px;animation:fade .4s ease both}
+  .cm-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:7px}
+  .cm-row b{font-family:'JetBrains Mono',monospace;color:var(--ink)}
+  .cm-row.total{margin-top:8px;padding-top:9px;border-top:1px solid var(--line);font-weight:600}
+  .cm-row.total span{color:var(--amber)} .cm-row.total b{color:var(--amber);font-size:14px}
+  .cm-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--panel-2);margin:4px 0 6px}
+  .cm-bar-base{background:var(--green);width:0;transition:width .8s ease}
+  .cm-bar-land{background:var(--amber);width:0;transition:width .8s ease}
+  .scrub-hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);margin-top:6px;text-align:center}
+  .cm-uplift{margin-top:9px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);
+    background:color-mix(in srgb,var(--amber) 10%,transparent);border:1px solid rgba(246,181,69,.4);
+    border-radius:7px;padding:6px 10px;text-align:center}
+  .sim-summary{margin-top:18px;border:1px solid rgba(70,209,138,.4);border-radius:14px;
+    background:linear-gradient(135deg,rgba(70,209,138,.07),transparent);padding:18px 20px;animation:rise .5s ease both}
+  .ss-h{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:var(--green);margin-bottom:14px}
+  .ss-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .ss-card{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+  .ss-card small{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);display:block;margin-bottom:6px}
+  .ss-card b{font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--ink)}
+  .ss-break{margin-top:14px;display:flex;flex-wrap:wrap;gap:7px}
+  .ss-bchip{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--amber);
+    background:rgba(246,181,69,.08);border:1px solid rgba(246,181,69,.35);border-radius:6px;padding:5px 10px}
+
+  /* ---------- Step by Step ---------- */
+  .sbs-intro{margin-bottom:22px}
+  .sbs-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}
+  .sbs-hint{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint)}
+  .mini-toggle{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--amber);border-radius:8px;padding:7px 13px;cursor:pointer;transition:.2s}
+  .mini-toggle:hover{border-color:var(--amber)}
+  .mini-toggle.off{color:var(--muted)}
+  #tab-steps.hide-gl .sbs-gl{display:none}
+  .sbs-rail{display:flex;gap:0;overflow-x:auto;padding:6px 2px 14px;margin-bottom:20px}
+  .sbs-step{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;
+    min-width:62px;position:relative}
+  .sbs-step::after{content:"";position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--line);z-index:0}
+  .sbs-step:last-child::after{display:none}
+  .sbs-step .sbn{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;z-index:1;
+    font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:var(--panel-2);
+    border:2px solid var(--line);color:var(--muted);transition:.25s}
+  .sbs-step .sbl{font-size:9px;color:var(--faint);text-align:center;line-height:1.25;max-width:70px;transition:.2s;word-break:break-word}
+  .sbs-step.done .sbn{background:var(--cyan);border-color:var(--cyan);color:var(--on-accent)}
+  .sbs-step.done::after{background:var(--cyan)}
+  .sbs-step.active .sbn{background:var(--amber);border-color:var(--amber);color:var(--on-accent);
+    box-shadow:0 0 0 5px rgba(246,181,69,.18);transform:scale(1.12)}
+  .sbs-step.active .sbl{color:var(--ink);font-weight:600}
+
+  .sbs-card{border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    background:linear-gradient(180deg,var(--panel),var(--bg2));min-height:360px;
+    animation:fade .35s ease both}
+  .sbs-top{display:flex;align-items:center;gap:18px;padding:24px 26px;border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 12%,transparent),transparent)}
+  .sbs-bignum{flex:none;width:60px;height:60px;border-radius:15px;display:grid;place-items:center;
+    font-family:'Archivo',sans-serif;font-weight:800;font-size:25px;color:var(--on-accent);background:var(--rc);
+    box-shadow:0 10px 26px -10px var(--rc)}
+  .sbs-th{flex:1;min-width:200px}
+  .sbs-role{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--rc);margin-bottom:6px;display:inline-flex;align-items:center;gap:7px}
+  .sbs-role::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--rc)}
+  .sbs-th h2{font-family:'Archivo',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.01em}
+  .sbs-optflag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--cyan);
+    border:1px solid rgba(63,208,216,.5);border-radius:5px;padding:3px 8px;background:rgba(63,208,216,.07)}
+
+  .sbs-body{padding:24px 26px;display:grid;grid-template-columns:1.3fr 1fr;gap:22px}
+  .sbs-what{font-size:14px;color:var(--ink);line-height:1.7;margin-bottom:18px}
+  .sbs-sec{margin-bottom:18px}
+  .sbs-sec h4{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:9px}
+  .sbs-inputs{display:flex;flex-wrap:wrap;gap:6px}
+  .sbs-inputs .f{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--rc);
+    background:color-mix(in srgb,var(--rc) 9%,transparent);border:1px solid color-mix(in srgb,var(--rc) 35%,transparent);
+    border-radius:6px;padding:4px 9px}
+  .sbs-action{font-size:13px;color:var(--muted);line-height:1.6;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+
+  .sbs-aside{display:flex;flex-direction:column;gap:16px}
+  .sbs-doc{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:15px;display:flex;gap:12px;align-items:flex-start}
+  .sbs-doc .di{flex:none;width:34px;height:40px;border-radius:6px;background:var(--bg);border:1px solid var(--line);
+    display:grid;place-items:center;font-size:16px}
+  .sbs-doc .dm small{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:3px}
+  .sbs-doc .dm b{font-size:13px;font-weight:600;line-height:1.3}
+  .sbs-gl{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .sbs-gl .glh{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+  .gl-entry{margin-bottom:10px}
+  .gl-entry .gle-lab{font-size:10.5px;color:var(--faint);margin-bottom:5px;font-style:italic}
+  .gl-line{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11.5px;padding:3px 0}
+  .gl-line .drcr{font-weight:700;margin-right:8px}
+  .gl-line.dr .drcr{color:var(--green)} .gl-line.cr .drcr{color:var(--red)}
+  .gl-line .acct{flex:1;color:var(--ink)}
+  .gl-none{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);line-height:1.5}
+  .sbs-next{font-size:11.5px;color:var(--muted);line-height:1.5;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .sbs-next b{color:var(--amber)}
+
+  .sbs-nav{display:flex;align-items:center;justify-content:space-between;margin-top:20px;gap:14px}
+  .sbs-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.1em}
+  .sbs-count span{color:var(--amber);font-weight:700}
+  .ctrl:disabled{opacity:.35;cursor:not-allowed}
+
+  /* ---------- Architecture ---------- */
+  .arch-intro{margin-bottom:24px}
+  .arch{margin:0}
+  .atier{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center}
+  .atier-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);text-align:right;line-height:1.35}
+  .arow{display:flex;gap:12px;flex-wrap:wrap}
+  .abox{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px 15px;position:relative;overflow:hidden;
+    display:grid;grid-template-columns:auto 1fr;grid-template-areas:"ico ttl" "ico sub";column-gap:11px;row-gap:3px;align-items:center}
+  .abox b{grid-area:ttl;align-self:end;display:block;font-size:13.5px;font-weight:600;line-height:1.25}
+  .abox small{grid-area:sub;align-self:start;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);display:block;letter-spacing:.02em}
+  .abox.ext{border-style:dashed;background:transparent}
+  .abox.ext b{color:var(--muted)}
+  .abox .ad{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--cyan))}
+  .abox[style*="--c"]{padding-left:18px}
+  .abox.rec{background:var(--panel-2);border-color:var(--line)}
+  .abox.rec b{color:var(--cyan)}
+  .abox.sor{border-color:rgba(70,209,138,.4);background:linear-gradient(135deg,rgba(70,209,138,.06),var(--panel))}
+  .abox.sor b{color:var(--green)}
+  .optmark{color:var(--cyan)!important;border:1px solid rgba(63,208,216,.4);border-radius:4px;padding:1px 5px;display:inline-block!important;width:max-content}
+
+  .aflow{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;margin:4px 0}
+  .aflow::before{content:""}
+  .aflow span{justify-self:center;display:inline-flex;align-items:center;gap:9px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);
+    background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:7px 13px;text-align:center;line-height:1.55;position:relative}
+  .aflow span::before,.aflow span::after{content:"";position:absolute;left:50%;width:1px;height:8px;background:var(--line)}
+  .aflow span::before{top:-9px} .aflow span::after{bottom:-9px}
+  .aflow.hot span{color:var(--amber);border-color:rgba(246,181,69,.5);background:color-mix(in srgb,var(--amber) 8%,var(--bg))}
+  .aflow.hot span::before,.aflow.hot span::after{background:var(--amber);opacity:.5}
+
+  .aengine{margin:4px 0;border:1.5px solid rgba(246,181,69,.6);border-radius:16px;
+    background:linear-gradient(135deg,rgba(246,181,69,.10),transparent);padding:20px 22px;
+    box-shadow:0 14px 40px -22px var(--amber)}
+  .ae-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .ae-badge{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--on-accent);background:var(--amber);padding:5px 10px;border-radius:6px;font-weight:700}
+  .ae-head h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:18px;color:var(--amber)}
+  .ae-steps{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+  .ae-step{flex:1;min-width:140px;background:var(--panel-2);border:1px solid rgba(246,181,69,.3);border-radius:10px;
+    padding:13px 14px;font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:5px}
+  .ae-step span{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;color:var(--on-accent);background:var(--amber);
+    width:22px;height:22px;border-radius:6px;display:grid;place-items:center}
+  .ae-step small{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);font-weight:400;letter-spacing:.02em}
+  .ae-step.gate{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 12%,var(--panel-2))}
+  .ae-arr{display:flex;align-items:center;color:var(--amber);font-size:16px;font-weight:700}
+
+  .arch-note{margin:18px 0 0;font-size:12px;color:var(--muted);line-height:1.6;
+    border-left:2px solid var(--cyan);padding-left:12px}
+  .across{margin:30px 0 0;border:1px solid var(--line);border-radius:14px;
+    background:var(--panel);padding:18px 20px}
+  .across-h{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:13px;display:flex;align-items:center;gap:9px}
+  .across-h::before{content:"";width:22px;height:1px;background:var(--cyan)}
+  .across-list{display:flex;flex-wrap:wrap;gap:8px}
+  .xc{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:8px;padding:7px 12px}
+
+  /* glossary modal */
+  .gloss-modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .25s ease both}
+  .gloss-modal[hidden]{display:none}
+  .gloss-box{background:var(--bg2);border:1px solid var(--line);border-radius:18px;max-width:880px;width:100%;
+    max-height:84vh;overflow:auto;box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
+  .gloss-top{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;
+    padding:20px 24px;border-bottom:1px solid var(--line);background:var(--bg2);z-index:1}
+  .gloss-top h3{font-family:'Archivo',sans-serif;font-weight:700;font-size:18px}
+  .gloss-x{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--ink);font-size:14px;cursor:pointer;transition:.2s}
+  .gloss-x:hover{border-color:var(--red);color:var(--red)}
+  .gloss-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:22px 24px}
+  .gloss-item{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  .gloss-item b{display:block;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--cyan);margin-bottom:6px}
+  .gloss-item p{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .gloss-item p b{display:inline;color:var(--amber);font-family:inherit}
+  @media(max-width:640px){ .gloss-grid{grid-template-columns:1fr} }
+  @media(max-width:640px){
+    body{padding:32px 14px 60px}
+    .pcell{border-right:none;border-bottom:1px solid rgba(246,181,69,.18)}
+    .pcell:last-child{border-bottom:none}
+    .boutcomes{grid-template-columns:1fr}
+    .sim-grid{grid-template-columns:1fr}
+    .speed{margin-left:0}
+    .ib-body{grid-template-columns:1fr}
+    .sbs-body{grid-template-columns:1fr}
+    .theme-toggle{display:inline-flex}
+    .top-ctrls{justify-content:flex-start}
+    .atier,.aflow{grid-template-columns:1fr}
+    .atier-label{text-align:left}
+    .aflow span{justify-self:start}
+    .ae-arr{display:none}
+  }
+
+  /* ---- architecture icons (inline SVG, lane-colored via currentColor) ---- */
+  .aico{grid-area:ico;align-self:center;display:inline-flex;width:32px;height:32px;border-radius:9px;align-items:center;justify-content:center;
+    margin-bottom:0;color:var(--c,var(--cyan));background:color-mix(in srgb,var(--c,var(--cyan)) 13%,transparent);
+    border:1px solid color-mix(in srgb,var(--c,var(--cyan)) 28%,transparent)}
+  .aico svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .abox.ext .aico{color:var(--faint);background:color-mix(in srgb,var(--muted) 11%,transparent);border-color:color-mix(in srgb,var(--muted) 22%,transparent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <header>
+      <h1>PO Import → Shipment Plan → <span class="em">Landed Cost Allocation</span></h1>
+      <p class="sub">กระบวนการสั่งซื้อสินค้านำเข้า ตั้งแต่ออก PO ต่างประเทศ จัดแผนการขนส่ง รับสินค้า จนถึงการกระจายต้นทุนนำเข้า (freight / duty / fee) ลงต้นทุนสินค้าด้วย Custom Allocation Script</p>
+    </header>
+    <div class="top-ctrls">
+      <button id="glossBtn" class="theme-toggle" aria-label="Open glossary">
+        <span class="tt-ic">?</span><span>คำศัพท์</span>
+      </button>
+      <button id="fsToggle" class="theme-toggle" aria-label="Toggle fullscreen">
+        <span class="tt-ic" id="fsIcon">⛶</span><span id="fsLabel">Full screen</span>
+      </button>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <span class="tt-ic" id="ttIcon">☾</span><span id="ttLabel">Dark</span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="arch"><span class="tn">00</span> Architecture</button>
+    <button class="tab-btn" data-tab="flow"><span class="tn">01</span> Process Flow</button>
+    <button class="tab-btn" data-tab="sim"><span class="tn">02</span> Data Flow Simulation</button>
+    <button class="tab-btn" data-tab="steps"><span class="tn">03</span> Step by Step</button>
+  </nav>
+
+  <div class="tabmeta">
+    <span id="tabDesc" class="tab-desc"></span>
+    <div class="glegend">
+      <span><i class="dot" style="background:var(--cyan)"></i>Procurement</span>
+      <span><i class="dot" style="background:var(--violet)"></i>Logistics</span>
+      <span><i class="dot" style="background:var(--green)"></i>Customs · Warehouse</span>
+      <span><i class="dot" style="background:var(--amber)"></i>Costing · Finance</span>
+    </div>
+  </div>
+
+  <!-- ============ ARCHITECTURE TAB ============ -->
+  <div id="tab-arch" class="tab-panel active">
+    <div class="arch-intro">
+      <div class="kicker" style="margin-bottom:10px">High-Level Architecture · Full Process</div>
+      <p class="sub" style="margin-top:0">ภาพรวมทั้งระบบในมุมสถาปัตยกรรม — จาก external parties → domain modules → core records → Landed Cost Engine (custom script) → system of record พร้อม cross-cutting concerns ที่ครอบทั้ง flow</p>
+    </div>
+
+    <div class="arch">
+      <!-- TIER: External -->
+      <div class="atier">
+        <div class="atier-label">External<br>Parties</div>
+        <div class="arow">
+          <div class="abox ext"><span class="aico"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="1"/><path d="M9.5 7h1.2M13.3 7h1.2M9.5 11h1.2M13.3 11h1.2M9.5 15h5"/></svg></span><b>Foreign Vendor</b><small>ผู้ขายสินค้า</small></div>
+          <div class="abox ext"><span class="aico"><svg viewBox="0 0 24 24"><path d="M3 6.5h10.5v9H3z"/><path d="M13.5 9.5h3.5l3 3v3h-6.5z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></span><b>Freight Forwarder</b><small>สายเรือ / ตัวแทนขนส่ง</small></div>
+          <div class="abox ext"><span class="aico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.9-7 9.9-4-2-7-5.5-7-9.9V6z"/><path d="M9.2 11.8l2.1 2.1 3.8-4"/></svg></span><b>Customs / Broker</b><small>ศุลกากร / ชิปปิ้ง</small></div>
+          <div class="abox ext"><span class="aico"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5"/><path d="M5 9.5v8M9.3 9.5v8M14.7 9.5v8M19 9.5v8"/><path d="M3.5 20.5h17"/></svg></span><b>Bank</b><small>ชำระเงิน / FX</small></div>
+        </div>
+      </div>
+
+      <div class="aflow"><span>PO · Invoice · B/L · Duty · Payment</span></div>
+
+      <!-- TIER: Domains -->
+      <div class="atier">
+        <div class="atier-label">Process<br>Domains</div>
+        <div class="arow">
+          <div class="abox" style="--c:var(--cyan)"><span class="ad"></span><span class="aico"><svg viewBox="0 0 24 24"><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/><path d="M3 4h2.2l2 11h10l2-7.5H6.5"/></svg></span><b>Procurement</b><small>PO · vendor · incoterm</small></div>
+          <div class="abox" style="--c:var(--violet)"><span class="ad"></span><span class="aico"><svg viewBox="0 0 24 24"><path d="M3 6.5h10.5v9H3z"/><path d="M13.5 9.5h3.5l3 3v3h-6.5z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></span><b>Logistics</b><small>shipment · booking · B/L</small></div>
+          <div class="abox" style="--c:var(--green)"><span class="ad"></span><span class="aico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.9-7 9.9-4-2-7-5.5-7-9.9V6z"/><path d="M9.2 11.8l2.1 2.1 3.8-4"/></svg></span><b>Customs</b><small>duty · VAT · clearance</small></div>
+          <div class="abox" style="--c:var(--green)"><span class="ad"></span><span class="aico"><svg viewBox="0 0 24 24"><path d="M12 3.2l8 4.4v8.8L12 20.8l-8-4.4V7.6z"/><path d="M4.2 7.8l7.8 4.3 7.8-4.3M12 12.1v8.5"/></svg></span><b>Warehouse</b><small>receipt · lot/serial · QC</small></div>
+          <div class="abox" style="--c:var(--amber)"><span class="ad"></span><span class="aico"><svg viewBox="0 0 24 24"><rect x="3" y="6.2" width="18" height="11.6" rx="1.6"/><circle cx="12" cy="12" r="2.6"/><path d="M6.2 9.2v5.6M17.8 9.2v5.6"/></svg></span><b>Finance / A-P</b><small>prepayment · bills · payment</small></div>
+        </div>
+      </div>
+
+      <div class="aflow"><span>create / update records (SuiteScript)</span></div>
+
+      <!-- TIER: Records -->
+      <div class="atier">
+        <div class="atier-label">Core<br>Records</div>
+        <div class="arow">
+          <div class="abox rec"><span class="aico"><svg viewBox="0 0 24 24"><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/><path d="M3 4h2.2l2 11h10l2-7.5H6.5"/></svg></span><b>Purchase Order</b><small>foreign · multi-currency</small></div>
+          <div class="abox rec"><span class="aico"><svg viewBox="0 0 24 24"><rect x="3" y="6.2" width="18" height="11.6" rx="1.6"/><circle cx="12" cy="12" r="2.6"/><path d="M6.2 9.2v5.6M17.8 9.2v5.6"/></svg></span><b>Vendor Prepayment</b><small class="optmark">OPTION</small></div>
+          <div class="abox rec"><span class="aico"><svg viewBox="0 0 24 24"><path d="M3 6.5h10.5v9H3z"/><path d="M13.5 9.5h3.5l3 3v3h-6.5z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></span><b>Shipment</b><small>cost-pool unit</small></div>
+          <div class="abox rec"><span class="aico"><svg viewBox="0 0 24 24"><path d="M12 3.2l8 4.4v8.8L12 20.8l-8-4.4V7.6z"/><path d="M4.2 7.8l7.8 4.3 7.8-4.3M12 12.1v8.5"/></svg></span><b>Item Receipt</b><small>base cost · lot</small></div>
+          <div class="abox rec"><span class="aico"><svg viewBox="0 0 24 24"><path d="M7 3h6.5L18 7.5V21H7z"/><path d="M13.3 3v4.3H18"/><path d="M9.7 12.5h5M9.7 15.5h5"/></svg></span><b>Vendor Bills</b><small>goods + import exp.</small></div>
+        </div>
+      </div>
+
+      <div class="aflow hot"><span>aggregate cost pool per shipment</span></div>
+
+      <!-- ENGINE -->
+      <div class="aengine">
+        <div class="ae-head"><span class="ae-badge">★ Custom Script</span><h3>Landed Cost Allocation Engine</h3></div>
+        <div class="ae-steps">
+          <div class="ae-step"><span>A</span>Gather Cost Pool</div>
+          <div class="ae-arr">→</div>
+          <div class="ae-step"><span>B</span>Compute Factor<small>value / weight / CBM / qty</small></div>
+          <div class="ae-arr">→</div>
+          <div class="ae-step"><span>C</span>Allocate<small>+ rounding adj.</small></div>
+          <div class="ae-arr">→</div>
+          <div class="ae-step gate"><span>D</span>Period Gate<small>open → IR · closed → adj.</small></div>
+        </div>
+      </div>
+
+      <div class="aflow hot"><span>post landed cost (period-aware)</span></div>
+
+      <!-- TIER: System of Record -->
+      <div class="atier">
+        <div class="atier-label">System of<br>Record</div>
+        <div class="arow">
+          <div class="abox sor"><span class="aico"><svg viewBox="0 0 24 24"><path d="M12 3.2l8 4.4v8.8L12 20.8l-8-4.4V7.6z"/><path d="M4.2 7.8l7.8 4.3 7.8-4.3M12 12.1v8.5"/></svg></span><b>Inventory Asset</b><small>final landed cost</small></div>
+          <div class="abox sor"><span class="aico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v6c0 1.5 3.1 2.6 7 2.6s7-1.1 7-2.6V6M5 12v6c0 1.5 3.1 2.6 7 2.6s7-1.1 7-2.6v-6"/></svg></span><b>General Ledger</b><small>period-correct posting</small></div>
+          <div class="abox sor"><span class="aico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-3 7.9-7 9.9-4-2-7-5.5-7-9.9V6z"/><path d="M9.2 11.8l2.1 2.1 3.8-4"/></svg></span><b>Costing &amp; Audit</b><small>allocation trace</small></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="arch-note">อ่านจากบนลงล่าง: External Parties → Domain Modules → Core Records → Allocation Engine → System of Record · กล่องในแต่ละแถวจัดกลุ่มตาม domain (สีเดียวกับ legend ด้านบน) ไม่ใช่การจับคู่ 1:1 แบบตายตัว</p>
+
+    <!-- cross-cutting -->
+    <div class="across">
+      <div class="across-h">Cross-cutting concerns</div>
+      <div class="across-list">
+        <span class="xc">Multi-currency / FX</span>
+        <span class="xc">Incoterm config → cost responsibility</span>
+        <span class="xc">Accounting Period control</span>
+        <span class="xc">Allocation basis config</span>
+        <span class="xc">Audit trace / reconciliation</span>
+        <span class="xc">Approval workflow</span>
+      </div>
+    </div>
+  </div><!-- /tab-arch -->
+
+  <div id="tab-flow" class="tab-panel">
+
+  <!-- STAGE 1 -->
+  <section class="stage s1">
+    <div class="stage-head">
+      <div class="num">1</div>
+      <div class="stage-title">
+        <div class="en">PO Import / Purchase Order</div>
+        <h2>ออกใบสั่งซื้อนำเข้า</h2>
+        <p>สร้างคำสั่งซื้อกับ vendor ต่างประเทศ ระบุเงื่อนไขการค้าและสกุลเงิน เป็นจุดเริ่มต้นของต้นทุนสินค้า (สินค้าฐาน)</p>
+      </div>
+      <span class="tag">Trigger: Demand / MRP</span>
+    </div>
+    <div class="stage-body">
+      <div class="step">
+        <div class="sh"><span class="sn">1.1</span><h3>สร้าง PO ต่างประเทศ</h3></div>
+        <ul>
+          <li>เลือก Foreign Vendor + Subsidiary</li>
+          <li>กำหนดสกุลเงิน + Exchange Rate</li>
+          <li>ระบุ Incoterm (FOB / CIF / EXW)</li>
+        </ul>
+        <div class="fields">
+          <span class="field">vendor</span><span class="field">currency</span>
+          <span class="field">exchangerate</span><span class="field">incoterm</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">1.2</span><h3>รายการสินค้า (Line)</h3></div>
+        <ul>
+          <li>Item / Qty / Unit Cost (สกุลต่างประเทศ)</li>
+          <li>น้ำหนัก & ปริมาตร (สำหรับ allocation)</li>
+          <li>พิกัดศุลกากร (HS Code) ต่อ item</li>
+        </ul>
+        <div class="fields">
+          <span class="field">item</span><span class="field">quantity</span>
+          <span class="field">rate_fx</span><span class="field">weight</span><span class="field">cbm</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">1.3</span><h3>กำหนดเวลา & อนุมัติ</h3></div>
+        <ul>
+          <li>Expected Ship Date (ETD) / Receipt Date</li>
+          <li>ผ่าน Approval Workflow</li>
+          <li>ส่ง PO ให้ vendor → รอ shipment</li>
+        </ul>
+        <div class="fields">
+          <span class="field">duedate</span><span class="field">expectedreceiptdate</span>
+          <span class="field">approvalstatus</span>
+        </div>
+      </div>
+      <div class="step opt">
+        <div class="sh"><span class="sn">1.4</span><h3>Vendor Prepayment (มัดจำ)</h3><span class="optbadge">OPTION</span></div>
+        <ul>
+          <li>% มัดจำ/เครดิตเทอม = Payment Terms (แยกในสัญญา)</li>
+          <li>component ที่ผู้ซื้อ prepay เอง ขึ้นกับ Incoterm ↓</li>
+          <li>สร้าง Vendor Prepayment → ลงเป็น Prepaid asset</li>
+        </ul>
+        <div class="fields">
+          <span class="field">vendor_prepayment</span><span class="field">deposit_pct</span>
+          <span class="field">prepaid_asset</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Incoterm responsibility matrix -->
+  <section class="incoterm-box">
+    <div class="ib-head">
+      <div class="en">Incoterm · Cost Responsibility (2020)</div>
+      <h3>Incoterm กำหนดว่า “ใครจ่าย component ไหน” → อะไรเข้า Landed Cost Pool</h3>
+      <span class="ib-hint">↓ กดเลือกเทอมเพื่อดูความรับผิดชอบของแต่ละฝ่าย</span>
+    </div>
+    <div class="ib-tabs">
+      <button class="ibt" data-ic="EXW">EXW</button>
+      <button class="ibt active" data-ic="FOB">FOB</button>
+      <button class="ibt" data-ic="CFR">CFR</button>
+      <button class="ibt" data-ic="CIF">CIF</button>
+      <button class="ibt" data-ic="DAP">DAP</button>
+      <button class="ibt" data-ic="DDP">DDP</button>
+    </div>
+    <div class="ib-body">
+      <div class="ib-matrix" id="icMatrix"></div>
+      <div class="ib-side">
+        <div class="ib-pool">
+          <div class="ibp-h"><span class="ibp-dot"></span>Landed Cost Pool · ผู้ซื้อจ่าย</div>
+          <div id="icPool" class="ibp-list"></div>
+        </div>
+        <div class="ib-prep">
+          <b>Prepayment / สำรองจ่าย</b>
+          <p id="icPrep"></p>
+        </div>
+      </div>
+    </div>
+    <p class="ib-note">⊙ สมมติ named place = คลังผู้ซื้อ · <b>% มัดจำ/เครดิตเทอมเป็น Payment Terms</b> ที่ตกลงแยกในสัญญา ไม่ได้กำหนดโดย Incoterm — Incoterm คุมแค่ “ความรับผิดชอบต่อ cost component”</p>
+  </section>
+
+  <div class="arrow">
+    <svg width="22" height="34" viewBox="0 0 22 34"><path d="M11 0v26M3 22l8 9 8-9" fill="none" style="stroke:var(--violet)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="lbl">รวม PO หลายใบ → 1 Shipment</span>
+  </div>
+
+  <!-- STAGE 2 -->
+  <section class="stage s2">
+    <div class="stage-head">
+      <div class="num">2</div>
+      <div class="stage-title">
+        <div class="en">Shipment Plan / Booking</div>
+        <h2>วางแผนการขนส่ง</h2>
+        <p>รวบรวม PO ที่จะมาด้วยกันเข้าเป็น Shipment เดียว จองระวาง ระบุ container/เที่ยวเรือ และเอกสารขนส่ง — เป็นหน่วยที่ landed cost จะถูกผูกและกระจาย</p>
+      </div>
+      <span class="tag">Unit of cost pooling</span>
+    </div>
+    <div class="stage-body">
+      <div class="step">
+        <div class="sh"><span class="sn">2.1</span><h3>Consolidate PO</h3></div>
+        <ul>
+          <li>เลือก PO หลายใบที่ลงเรือเที่ยวเดียวกัน</li>
+          <li>สร้าง Shipment record + link PO lines</li>
+          <li>กำหนด FCL / LCL / Air</li>
+        </ul>
+        <div class="fields">
+          <span class="field">shipment_id</span><span class="field">linked_po[]</span>
+          <span class="field">mode</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">2.2</span><h3>Booking & Container</h3></div>
+        <ul>
+          <li>จองระวาง: Vessel / Flight, Voyage</li>
+          <li>Container type / จำนวนตู้</li>
+          <li>เลข B/L หรือ AWB, Booking No.</li>
+        </ul>
+        <div class="fields">
+          <span class="field">vessel</span><span class="field">bl_awb_no</span>
+          <span class="field">container_type</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">2.3</span><h3>Schedule & Customs</h3></div>
+        <ul>
+          <li>ETD / ETA + ติดตามสถานะ in-transit</li>
+          <li>เตรียมเอกสารพิธีการศุลกากร (Invoice/Packing)</li>
+          <li>ประเมินอากรล่วงหน้าจาก HS Code</li>
+        </ul>
+        <div class="fields">
+          <span class="field">etd</span><span class="field">eta</span>
+          <span class="field">status</span><span class="field">est_duty</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow">
+    <svg width="22" height="34" viewBox="0 0 22 34"><path d="M11 0v26M3 22l8 9 8-9" fill="none" style="stroke:var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="lbl">สินค้าถึงท่า → ผ่านพิธีการ → รับเข้า</span>
+  </div>
+
+  <!-- STAGE 3 -->
+  <section class="stage s3">
+    <div class="stage-head">
+      <div class="num">3</div>
+      <div class="stage-title">
+        <div class="en">Goods Receipt / Item Receipt</div>
+        <h2>รับสินค้าเข้าคลัง</h2>
+        <p>เมื่อสินค้าผ่านพิธีการและถึงคลัง รับเข้าระบบตาม PO/Shipment พร้อมระบุ Lot/Serial — มูลค่าที่รับ ณ จุดนี้ยังเป็น "ต้นทุนสินค้าฐาน" เท่านั้น</p>
+      </div>
+      <span class="tag">Inventory asset (base only)</span>
+    </div>
+    <div class="stage-body">
+      <div class="step">
+        <div class="sh"><span class="sn">3.1</span><h3>Item Receipt</h3></div>
+        <ul>
+          <li>รับเข้าอ้างอิง PO / Shipment</li>
+          <li>ตรวจ Qty รับจริง vs สั่ง</li>
+          <li>ลง Location / Bin</li>
+        </ul>
+        <div class="fields">
+          <span class="field">createdfrom</span><span class="field">quantityreceived</span>
+          <span class="field">location</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">3.2</span><h3>Lot / Serial & QC</h3></div>
+        <ul>
+          <li>ระบุ Inventory Detail (Lot/Serial)</li>
+          <li>ตรวจรับคุณภาพ (QC pass/hold)</li>
+          <li>บันทึกวันหมดอายุ / Mfg date</li>
+        </ul>
+        <div class="fields">
+          <span class="field">inventorydetail</span><span class="field">lotnumber</span>
+          <span class="field">qc_status</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">3.3</span><h3>ตั้งหนี้ค่าใช้จ่ายนำเข้า</h3></div>
+        <ul>
+          <li>รับ Vendor Bill: ค่าระวาง, ประกัน</li>
+          <li>ใบเสร็จกรมศุลกากร (อากร/VAT)</li>
+          <li>ค่า Shipping agent / THC / inland</li>
+        </ul>
+        <div class="fields">
+          <span class="field">vendor_bill</span><span class="field">expense_type</span>
+          <span class="field">amount</span>
+        </div>
+      </div>
+
+      <!-- A/P options box -->
+      <div class="opt-box">
+        <div class="sbh">
+          <span class="chip ap">A/P Options</span>
+          <h3>ตั้งหนี้ &amp; ชำระเงิน — เส้นทางการเงิน</h3>
+        </div>
+        <div class="opt-grid">
+          <div class="ocell">
+            <div class="on">A</div>
+            <h4>Vendor Bill — ค่าสินค้า</h4>
+            <p>ตั้งหนี้ค่าสินค้ากับ vendor ต่างประเทศ อ้างอิง PO/IR (3-way match: PO ↔ Receipt ↔ Bill)</p>
+            <div class="fields"><span class="field">vendor_bill_goods</span><span class="field">3way_match</span></div>
+          </div>
+          <div class="ocell">
+            <div class="on">B</div>
+            <h4>Apply Prepayment</h4>
+            <p>นำ Vendor Prepayment (มัดจำ) ที่จ่ายไว้ตอน PO มาตัดกับ Bill ค่าสินค้า → เหลือยอดค้างจริง</p>
+            <div class="fields"><span class="field">apply_prepayment</span><span class="field">balance_due</span></div>
+          </div>
+          <div class="ocell">
+            <div class="on">C</div>
+            <h4>Vendor Bill — ค่าใช้จ่ายนำเข้า</h4>
+            <p>ตั้งหนี้แยกราย vendor: freight / insurance / duty+VAT / broker / THC / inland — เข้าสู่ cost pool</p>
+            <div class="fields"><span class="field">freight</span><span class="field">duty</span><span class="field">broker_fee</span></div>
+          </div>
+          <div class="ocell">
+            <div class="on">D</div>
+            <h4>จ่ายส่วนที่เหลือ</h4>
+            <p>Vendor Payment เคลียร์ยอดค้างของ Bill ค่าสินค้า + ค่าใช้จ่ายนำเข้าทั้งหมด</p>
+            <div class="fields"><span class="field">vendor_payment</span><span class="field">paid_in_full</span></div>
+          </div>
+        </div>
+        <p class="opt-note">⊙ Prepayment เป็นเรื่อง <b>timing ของเงินสด</b> — ไม่เพิ่ม cost pool เอง แต่ยอดเต็มของ Bill (ก่อนหักมัดจำ) คือฐานที่ใช้ allocate</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow">
+    <svg width="22" height="34" viewBox="0 0 22 34"><path d="M11 0v26M3 22l8 9 8-9" fill="none" style="stroke:var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="lbl">รวบรวมค่าใช้จ่ายต่อ Shipment → Allocate</span>
+  </div>
+
+  <!-- STAGE 4 -->
+  <section class="stage s4">
+    <div class="stage-head">
+      <div class="num">4</div>
+      <div class="stage-title">
+        <div class="en">Landed Cost Allocation</div>
+        <h2>จัดสรรต้นทุนนำเข้า</h2>
+        <p>กระจายค่าใช้จ่ายนำเข้าทั้งหมดของ Shipment ลงสู่ต้นทุนของแต่ละ item/line ด้วย Custom Allocation Script เพื่อให้ต้นทุนสินค้าสะท้อนต้นทุน "ถึงคลัง" จริง</p>
+      </div>
+      <span class="tag hot">★ Custom Allocation Script</span>
+    </div>
+    <div class="stage-body">
+      <div class="step">
+        <div class="sh"><span class="sn">4.1</span><h3>รวม Cost Pool</h3></div>
+        <ul>
+          <li>ดึงค่าใช้จ่ายนำเข้าทุกตัวของ Shipment</li>
+          <li>แยกตามประเภท component</li>
+          <li>แปลงเป็นสกุลเงินฐาน (base currency)</li>
+        </ul>
+        <div class="fields">
+          <span class="field">freight</span><span class="field">insurance</span>
+          <span class="field">import_duty</span><span class="field">broker_fee</span>
+          <span class="field">port_thc</span><span class="field">inland</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">4.2</span><h3>เลือก Allocation Basis</h3></div>
+        <ul>
+          <li>กำหนด basis ต่อ component (ไม่จำเป็นต้องเท่ากัน)</li>
+          <li>เช่น freight → CBM, duty → CIF value</li>
+          <li>คำนวณ weight factor ต่อ line</li>
+        </ul>
+        <div class="fields">
+          <span class="field">basis_by_component</span><span class="field">line_factor</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="sh"><span class="sn">4.3</span><h3>เขียนกลับ + เช็ค Period</h3></div>
+        <ul>
+          <li>ตรวจสถานะงวด (Accounting Period) ของ IR</li>
+          <li>งวดเปิด → update Item Receipt โดยตรง</li>
+          <li>งวดปิด → ลง adjustment งวดที่เปิดแทน</li>
+        </ul>
+        <div class="fields">
+          <span class="field">period_status</span><span class="field">landed_cost</span>
+          <span class="field">unit_cost_final</span>
+        </div>
+      </div>
+
+      <!-- Script pipeline -->
+      <div class="script-box">
+        <div class="sbh">
+          <span class="chip">Script Logic</span>
+          <h3>Custom Allocation Script — Pipeline</h3>
+        </div>
+        <div class="pipe">
+          <div class="pcell">
+            <div class="pn">STEP A</div>
+            <h4>Gather</h4>
+            <p>ดึง shipment + linked PO lines + cost components ที่ตั้งหนี้แล้ว ตรวจว่า cost pool ครบ</p>
+          </div>
+          <div class="pcell">
+            <div class="pn">STEP B</div>
+            <h4>Compute Factor</h4>
+            <p>คำนวณสัดส่วนของแต่ละ line ตาม basis ที่เลือก (Σ factor = 100% ต่อ component)</p>
+          </div>
+          <div class="pcell">
+            <div class="pn">STEP C</div>
+            <h4>Allocate</h4>
+            <p>allocated = pool × factor ใช้ rounding adjustment กับ line สุดท้ายกัน error สะสม</p>
+          </div>
+          <div class="pcell">
+            <div class="pn">STEP D</div>
+            <h4>Check Period</h4>
+            <p>ตรวจ Accounting Period ของ Item Receipt ก่อนเขียนกลับ — เป็นตัวตัดสินปลายทาง</p>
+          </div>
+        </div>
+
+        <!-- period decision branch -->
+        <div class="branch">
+          <div class="bcond">
+            <span class="diamond">◆</span>
+            <div>
+              <div class="bq">Period ของ Item Receipt ปิดหรือยัง?</div>
+              <div class="bnote">ตัดสินใจปลายทางของ allocated cost</div>
+            </div>
+          </div>
+          <div class="boutcomes">
+            <div class="bcard open">
+              <div class="bh"><span class="bbadge ok">OPEN</span><h4>งวดยังเปิด → Update Item Receipt</h4></div>
+              <ul>
+                <li>เขียน landed cost กลับเข้า Item Receipt เดิม (Landed Cost subtab)</li>
+                <li>Re-cost inventory ในงวดเดิม → ต้นทุน &amp; GL ลงถูกงวด</li>
+                <li>ไม่ต้องสร้างเอกสารปรับปรุงเพิ่ม</li>
+              </ul>
+              <div class="fields">
+                <span class="field">item_receipt.landedcost</span><span class="field">recost</span>
+              </div>
+            </div>
+            <div class="bcard closed">
+              <div class="bh"><span class="bbadge no">CLOSED</span><h4>งวดปิดแล้ว → Adjustment งวดเปิด</h4></div>
+              <ul>
+                <li>แตะ IR เดิมไม่ได้ (period locked)</li>
+                <li>ลง Inventory/Cost Adjustment ในงวดปัจจุบันที่เปิด</li>
+                <li>อ้างอิงกลับ IR/Shipment เดิมไว้ใน memo เพื่อ trace</li>
+              </ul>
+              <div class="fields">
+                <span class="field">inv_cost_adjustment</span><span class="field">open_period</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipe pipe-foot">
+          <div class="pcell">
+            <div class="pn">STEP E</div>
+            <h4>Post &amp; Audit</h4>
+            <p>Post GL ตามปลายทางที่เลือก + เก็บ allocation trace (component/line) เพื่อ audit &amp; กระทบยอด</p>
+          </div>
+        </div>
+        <div class="basis">
+          <span class="b">⊙ by Value (CIF)</span>
+          <span class="b">⊙ by Weight (kg)</span>
+          <span class="b">⊙ by Volume (CBM)</span>
+          <span class="b">⊙ by Quantity</span>
+          <span class="b">⊙ Manual override</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OUTPUT -->
+  <section class="outputs">
+    <div class="oh">Output / ผลลัพธ์</div>
+    <div class="ogrid">
+      <div class="ocard">
+        <h4><span class="ic"></span>ต้นทุน &amp; GL ลงถูกงวด</h4>
+        <p>งวดเปิด → update IR ให้ต้นทุน/GL ลงงวดเดิม; งวดปิด → ลง adjustment งวดที่เปิด ไม่ฝืนงวดที่ปิดบัญชีแล้ว</p>
+      </div>
+      <div class="ocard">
+        <h4><span class="ic"></span>Inventory Asset ถูกต้อง</h4>
+        <p>มูลค่าสินค้าคงคลังใน GL ตรงกับเงินที่จ่ายจริง รวมค่าขนส่ง อากร และค่าธรรมเนียม</p>
+      </div>
+      <div class="ocard">
+        <h4><span class="ic"></span>Allocation Trace</h4>
+        <p>บันทึกการกระจายต่อ component/line ใช้ตรวจสอบย้อนหลังและกระทบยอดกับ Vendor Bill</p>
+      </div>
+      <div class="ocard">
+        <h4><span class="ic"></span>วิเคราะห์ต้นทุนนำเข้า</h4>
+        <p>รายงานสัดส่วน freight/duty/fee ต่อ shipment ใช้เปรียบเทียบ supplier และ route</p>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /tab-flow -->
+
+  <!-- ============ SIMULATION TAB ============ -->
+  <div id="tab-sim" class="tab-panel">
+
+    <div class="sim-intro">
+      <div class="kicker" style="margin-bottom:10px">Simulation · Lifecycle T+0 → T+35</div>
+      <p class="sub" style="margin-top:0">จำลองการไหลของข้อมูลตลอด lifecycle ของ 1 shipment — ดูว่าแต่ละช่วงเวลามีเอกสารอะไรเกิดขึ้น และข้อมูล (data) สะสมขึ้นเรื่อย ๆ จนถึงการ allocate landed cost</p>
+    </div>
+
+    <div class="sim-controls">
+      <button id="playBtn" class="ctrl primary">▶ เล่น Simulation</button>
+      <button id="resetBtn" class="ctrl">↺ รีเซ็ต</button>
+      <div class="speed">
+        <span>Speed</span>
+        <button class="sp active" data-sp="1">1×</button>
+        <button class="sp" data-sp="2">2×</button>
+        <button class="sp" data-sp="4">4×</button>
+      </div>
+      <div class="clock"><span class="ck-label">DAY</span><span id="clock">T+0</span></div>
+    </div>
+
+    <!-- timeline scrubber -->
+    <div class="sim-timeline">
+      <div class="tl-track">
+        <div class="tl-fill" id="tlFill"></div>
+        <div class="tl-head" id="tlHead"></div>
+        <div class="tl-markers" id="tlMarkers"></div>
+      </div>
+      <input type="range" id="scrub" min="0" max="35" value="0" step="0.1">
+      <div class="scrub-hint">↔ ลากแถบเพื่อเลื่อนเวลาเอง หรือกด “เล่น Simulation”</div>
+    </div>
+
+    <!-- pipeline nodes -->
+    <div class="sim-pipe">
+      <div class="snode" data-stage="1"><span class="sdot" style="--c:var(--cyan)"></span><div class="slab"><b>PO Import</b><small>Procurement</small></div></div>
+      <div class="sconn"><i></i></div>
+      <div class="snode" data-stage="2"><span class="sdot" style="--c:var(--violet)"></span><div class="slab"><b>Shipment</b><small>Logistics</small></div></div>
+      <div class="sconn"><i></i></div>
+      <div class="snode" data-stage="3"><span class="sdot" style="--c:var(--green)"></span><div class="slab"><b>Receipt</b><small>Receiving</small></div></div>
+      <div class="sconn"><i></i></div>
+      <div class="snode" data-stage="4"><span class="sdot" style="--c:var(--amber)"></span><div class="slab"><b>Landed Cost</b><small>Costing</small></div></div>
+    </div>
+
+    <div class="sim-grid">
+      <!-- event log -->
+      <div class="sim-col">
+        <div class="col-head"><span class="ch-ic" style="background:var(--cyan)"></span>Event Log · ลำดับเหตุการณ์</div>
+        <div id="eventLog" class="event-log">
+          <div class="el-empty">กด “เล่น Simulation” เพื่อเริ่ม…</div>
+        </div>
+      </div>
+
+      <!-- documents -->
+      <div class="sim-col">
+        <div class="col-head"><span class="ch-ic" style="background:var(--amber)"></span>เอกสารที่เกิดขึ้น · Documents</div>
+        <div id="docTray" class="doc-tray">
+          <div class="el-empty">ยังไม่มีเอกสาร</div>
+        </div>
+      </div>
+
+      <!-- data state -->
+      <div class="sim-col">
+        <div class="col-head"><span class="ch-ic" style="background:var(--green)"></span>Data State · ข้อมูลสะสม</div>
+        <div id="dataState" class="data-state">
+          <div class="el-empty">data จะสะสมเมื่อเหตุการณ์เกิด</div>
+        </div>
+        <div class="cost-meter" id="costMeter" hidden>
+          <div class="cm-row"><span>ต้นทุนฐาน (Base)</span><b id="cmBase">–</b></div>
+          <div class="cm-row"><span>+ Landed cost</span><b id="cmLanded">–</b></div>
+          <div class="cm-bar"><div class="cm-bar-base" id="cmBarBase"></div><div class="cm-bar-land" id="cmBarLand"></div></div>
+          <div class="cm-row total"><span>ต้นทุนถึงคลัง (Final)</span><b id="cmFinal">–</b></div>
+          <div id="cmUplift" class="cm-uplift" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- completion summary -->
+    <div id="simSummary" class="sim-summary" hidden>
+      <div class="ss-h">✓ สรุปเมื่อจบกระบวนการ (T+35)</div>
+      <div class="ss-grid">
+        <div class="ss-card"><small>เอกสารที่ออกทั้งหมด</small><b id="ssDocs">–</b></div>
+        <div class="ss-card"><small>Landed cost รวม</small><b id="ssLanded">–</b></div>
+        <div class="ss-card"><small>ต้นทุนถึงคลัง (Final)</small><b id="ssFinal">–</b></div>
+        <div class="ss-card"><small>ต้นทุนเพิ่มขึ้น</small><b id="ssUplift">–</b></div>
+      </div>
+      <div class="ss-break" id="ssBreak"></div>
+    </div>
+
+  </div><!-- /tab-sim -->
+
+  <!-- ============ STEP BY STEP TAB ============ -->
+  <div id="tab-steps" class="tab-panel">
+    <div class="sbs-intro">
+      <div class="kicker" style="margin-bottom:10px">Step by Step · Guided Walkthrough</div>
+      <p class="sub" style="margin-top:0">เดินทีละขั้นตอนตั้งแต่ออก PO จนถึงปิด Landed Cost — แต่ละ step บอก role ที่ทำ, ข้อมูลที่ใช้, เอกสารที่ออก และผลกระทบทางบัญชี (GL)</p>
+      <div class="sbs-bar">
+        <span class="sbs-hint">↘ กดที่ลำดับด้านล่าง หรือใช้ลูกศร ← → เพื่อข้าม step</span>
+        <button id="glToggle" class="mini-toggle">GL: แสดง</button>
+      </div>
+    </div>
+
+    <div class="sbs-rail" id="sbsRail"></div>
+
+    <div class="sbs-card" id="sbsCard"></div>
+
+    <div class="sbs-nav">
+      <button id="sbsPrev" class="ctrl">← ก่อนหน้า</button>
+      <div class="sbs-count">STEP <span id="sbsNow">1</span> / <span id="sbsTotal">13</span></div>
+      <button id="sbsNext" class="ctrl primary">ถัดไป →</button>
+    </div>
+  </div><!-- /tab-steps -->
+
+  <footer>Business Process Flow · Import Procurement</footer>
+
+  <!-- Glossary modal -->
+  <div id="glossModal" class="gloss-modal" hidden>
+    <div class="gloss-box">
+      <div class="gloss-top">
+        <h3>คำศัพท์ · Glossary</h3>
+        <button id="glossClose" class="gloss-x" aria-label="Close">✕</button>
+      </div>
+      <div class="gloss-grid">
+        <div class="gloss-item"><b>Incoterm</b><p>ข้อตกลงสากลที่ระบุว่าผู้ซื้อ/ผู้ขายรับผิดชอบค่าใช้จ่ายและความเสี่ยงช่วงไหน (EXW, FOB, CIF, DDP ฯลฯ) — กำหนดว่า component ไหนเข้า cost pool</p></div>
+        <div class="gloss-item"><b>Cost Pool</b><p>กลุ่มค่าใช้จ่ายนำเข้าทั้งหมดของ shipment (freight + duty + insurance + fee) ที่จะถูกกระจายลงต้นทุนสินค้า</p></div>
+        <div class="gloss-item"><b>Landed Cost</b><p>ต้นทุน “ถึงคลัง” จริง = ราคาสินค้า + ค่าใช้จ่ายนำเข้าที่กระจายแล้ว</p></div>
+        <div class="gloss-item"><b>Allocation Basis</b><p>เกณฑ์กระจายต้นทุน — by Value / Weight / Volume (CBM) / Quantity เลือกต่อ component ได้</p></div>
+        <div class="gloss-item"><b>Item Receipt (IR)</b><p>เอกสารรับสินค้าเข้าคลังใน NetSuite — มูลค่า ณ จุดนี้เป็นต้นทุนฐานก่อนเติม landed cost</p></div>
+        <div class="gloss-item"><b>IRNB</b><p>Inventory Received-Not-Billed — บัญชีพักของที่รับเข้าแล้วแต่ยังไม่ตั้งหนี้ vendor</p></div>
+        <div class="gloss-item"><b>Landed Cost Clearing</b><p>บัญชีพักค่าใช้จ่ายนำเข้า ก่อน allocate เข้า inventory — เมื่อ allocate ครบควรเหลือศูนย์</p></div>
+        <div class="gloss-item"><b>Vendor Prepayment</b><p>เงินจ่ายล่วงหน้า/มัดจำให้ vendor ลงเป็นสินทรัพย์ก่อน แล้วนำมาตัดกับ Vendor Bill ภายหลัง</p></div>
+        <div class="gloss-item"><b>3-way match</b><p>การกระทบ PO ↔ Item Receipt ↔ Vendor Bill ให้ตรงกันก่อนตั้งหนี้/จ่ายเงิน</p></div>
+        <div class="gloss-item"><b>Accounting Period</b><p>งวดบัญชี เมื่อ <b>ปิดงวด</b>แล้วแก้เอกสารในงวดนั้นไม่ได้ (กันการย้อนแก้ตัวเลขที่ปิดบัญชีไปแล้ว) — landed cost จึงต้องลง adjustment ในงวดที่ยังเปิดแทน</p></div>
+        <div class="gloss-item"><b>CBM</b><p>Cubic Meter — ปริมาตรสินค้า ใช้เป็นเกณฑ์กระจายค่า freight</p></div>
+        <div class="gloss-item"><b>THC</b><p>Terminal Handling Charge — ค่าภาระหน้าท่า</p></div>
+        <div class="gloss-item"><b>OPTION</b><p>ป้ายบอกว่าขั้นตอนนั้นเป็น “ทางเลือก” ไม่จำเป็นทุกดีล (เช่น มัดจำ ขึ้นกับ payment terms)</p></div>
+        <div class="gloss-item"><b>Period Gate</b><p>ด่านตรวจสถานะงวดใน allocation script: งวดเปิด → เขียนกลับ IR; งวดปิด → ลง adjustment งวดที่เปิด</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+(function(){
+  // ---- Theme toggle ----
+  var root=document.documentElement, ttIcon=document.getElementById('ttIcon'), ttLabel=document.getElementById('ttLabel');
+  function applyTheme(mode){
+    root.setAttribute('data-theme',mode);
+    ttIcon.textContent = mode==='dark' ? '☾' : '☀';
+    ttLabel.textContent = mode==='dark' ? 'Dark' : 'Light';
+    try{ localStorage.setItem('icflow-theme',mode); }catch(e){}
+  }
+  var saved='dark';
+  try{ saved=localStorage.getItem('icflow-theme')||'dark'; }catch(e){}
+  applyTheme(saved);
+  document.getElementById('themeToggle').addEventListener('click',function(){
+    applyTheme(root.getAttribute('data-theme')==='dark' ? 'light' : 'dark');
+  });
+
+  // ---- Fullscreen ----
+  var fsBtn=document.getElementById('fsToggle'), fsIcon=document.getElementById('fsIcon'), fsLabel=document.getElementById('fsLabel');
+  function fsState(){
+    var on=!!document.fullscreenElement;
+    fsIcon.textContent = on ? '✕' : '⛶';
+    fsLabel.textContent = on ? 'Exit' : 'Full screen';
+  }
+  fsBtn.addEventListener('click',function(){
+    if(!document.fullscreenElement){
+      (document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen||function(){}).call(document.documentElement);
+    }else{
+      (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
+    }
+  });
+  document.addEventListener('fullscreenchange',fsState);
+  document.addEventListener('webkitfullscreenchange',fsState);
+  fsState();
+
+  // ---- Glossary ----
+  var glossModal=document.getElementById('glossModal');
+  document.getElementById('glossBtn').addEventListener('click',function(){ glossModal.hidden=false; });
+  document.getElementById('glossClose').addEventListener('click',function(){ glossModal.hidden=true; });
+  glossModal.addEventListener('click',function(e){ if(e.target===glossModal) glossModal.hidden=true; });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') glossModal.hidden=true; });
+
+  // ---- Tabs ----
+  var TAB_DESC={
+    arch:'ภาพรวมทั้งระบบในมุมสถาปัตยกรรม — เริ่มที่นี่เพื่อเห็นองค์ประกอบหลักและทิศทางการไหล',
+    flow:'รายละเอียดแต่ละ stage เป็นการ์ด พร้อม sub-step, field และ logic สำคัญ',
+    sim:'จำลองการไหลของข้อมูลตามเวลา (T+0 → T+35 วัน) — กดเล่นหรือลาก timeline เองได้',
+    steps:'เดินทีละขั้น 13 step พร้อม role, เอกสารที่ออก และผลทางบัญชี (GL)'
+  };
+  var tabDescEl=document.getElementById('tabDesc');
+  function setTabDesc(t){ if(tabDescEl) tabDescEl.textContent=TAB_DESC[t]||''; }
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active')});
+      btn.classList.add('active');
+      document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+      setTabDesc(btn.dataset.tab);
+    });
+  });
+  setTabDesc('arch');
+
+  // ---- Simulation data ----
+  var TMAX=35;
+  var STAGE_COLOR={1:'var(--cyan)',2:'var(--violet)',3:'var(--green)',4:'var(--amber)'};
+  var EVENTS=[
+    {t:0, stage:1, title:'ออก PO + อนุมัติ', note:'สร้าง PO ต่างประเทศ ส่งให้ vendor',
+      doc:{name:'Purchase Order #PO-1042', meta:'Foreign vendor · USD', icon:'🧾', tag:'Procurement', tagc:'var(--cyan)'},
+      fields:['vendor','currency','po_lines','etd']},
+    {t:1, stage:1, title:'จ่าย Prepayment (มัดจำ 30%)', note:'Vendor Prepayment → ลงเป็น prepaid asset', opt:true,
+      doc:{name:'Vendor Prepayment #VP-220', meta:'Deposit 30% · prepaid asset', icon:'💳', tag:'Prepayment', tagc:'var(--cyan)'},
+      fields:['vendor_prepayment','deposit_pct','prepaid_asset']},
+    {t:2, stage:2, title:'รวม PO → จองระวาง', note:'consolidate PO เข้า shipment + booking',
+      doc:{name:'Booking Confirmation', meta:'Vessel · Container FCL', icon:'📦', tag:'Logistics', tagc:'var(--violet)'},
+      fields:['shipment_id','vessel','container_type']},
+    {t:3, stage:2, title:'ETD — สินค้าออกจากต้นทาง', note:'ออกเอกสารขนส่งหลัก',
+      doc:{name:'Bill of Lading (B/L)', meta:'ETD set · in-transit', icon:'🚢', tag:'Logistics', tagc:'var(--violet)'},
+      fields:['bl_no','etd','eta']},
+    {t:30, stage:2, title:'ETA — เรือถึงท่าปลายทาง', note:'แจ้งเตือนสินค้าถึงท่า',
+      doc:{name:'Arrival Notice', meta:'ATA confirmed', icon:'⚓', tag:'Logistics', tagc:'var(--violet)'},
+      fields:['ata']},
+    {t:31, stage:3, title:'ผ่านพิธีการศุลกากร', note:'ชำระอากร + VAT นำเข้า',
+      doc:{name:'ใบขนสินค้าขาเข้า + ใบเสร็จอากร', meta:'Duty + Import VAT paid', icon:'🛃', tag:'Customs', tagc:'var(--green)'},
+      fields:['import_duty','import_vat']},
+    {t:32, stage:3, title:'Item Receipt — รับเข้าคลัง', note:'มูลค่า ณ จุดนี้ = ต้นทุนฐานเท่านั้น', base:true,
+      doc:{name:'Item Receipt #IR-880', meta:'Qty received · Lot assigned', icon:'📥', tag:'Receiving', tagc:'var(--green)'},
+      fields:['quantityreceived','lotnumber','base_cost']},
+    {t:33, stage:3, title:'ตั้งหนี้ค่าสินค้า + Apply Prepayment', note:'Vendor Bill ค่าสินค้า → ตัดมัดจำ → เหลือยอดค้าง', opt:true,
+      doc:{name:'Vendor Bill (Goods) − Prepayment applied', meta:'3-way match · balance due', icon:'🧮', tag:'A/P', tagc:'var(--amber)'},
+      fields:['vendor_bill_goods','apply_prepayment','balance_due']},
+    {t:34, stage:3, title:'ตั้งหนี้ค่าใช้จ่ายนำเข้า', note:'Vendor Bills: freight / insurance / broker', landed:true,
+      doc:{name:'Vendor Bills ×3', meta:'Freight · Insurance · Broker', icon:'💵', tag:'A/P', tagc:'var(--amber)'},
+      fields:['freight','insurance','broker_fee']},
+    {t:34.5, stage:3, title:'จ่ายส่วนที่เหลือ', note:'Vendor Payment เคลียร์ยอดค้างทั้งหมด', opt:true,
+      doc:{name:'Vendor Payment', meta:'Goods balance + import expenses', icon:'🏦', tag:'A/P', tagc:'var(--amber)'},
+      fields:['vendor_payment','paid_in_full']},
+    {t:35, stage:4, title:'Landed Cost Allocation', note:'รัน script → เช็ค period → เขียนกลับ IR หรือ adjustment', final:true,
+      doc:{name:'Updated IR / Inv. Adjustment + Allocation Trace', meta:'period-aware posting', icon:'⚙️', tag:'Costing', tagc:'var(--amber)'},
+      fields:['period_status','landed_cost','unit_cost_final']}
+  ];
+  var BASE_COST=1000000;
+  var LC_BREAK=[
+    {label:'Freight',    amount:120000},
+    {label:'Insurance',  amount:20000},
+    {label:'Import duty', amount:60000},
+    {label:'Broker / THC', amount:20000}
+  ];
+  var LANDED_COST=LC_BREAK.reduce(function(s,x){return s+x.amount;},0); // 220,000
+  function thb(n){ return '฿'+Math.round(n).toLocaleString('en-US'); }
+
+  // ---- Build timeline markers ----
+  var markersEl=document.getElementById('tlMarkers');
+  EVENTS.forEach(function(ev,i){
+    var pct=(ev.t/TMAX)*100;
+    var m=document.createElement('div');
+    m.className='tl-mark'; m.style.left=pct+'%';
+    m.style.setProperty('--accent',STAGE_COLOR[ev.stage]);
+    m.dataset.idx=i;
+    m.innerHTML='<i></i><span>T+'+ev.t+'</span>';
+    markersEl.appendChild(m);
+  });
+
+  // ---- Refs ----
+  var fill=document.getElementById('tlFill'), head=document.getElementById('tlHead'),
+      scrub=document.getElementById('scrub'), clock=document.getElementById('clock'),
+      logEl=document.getElementById('eventLog'), docEl=document.getElementById('docTray'),
+      dataEl=document.getElementById('dataState'), meter=document.getElementById('costMeter');
+  var playBtn=document.getElementById('playBtn'), resetBtn=document.getElementById('resetBtn');
+  var marks=document.querySelectorAll('.tl-mark');
+  var nodes={}; document.querySelectorAll('.snode').forEach(function(n){nodes[n.dataset.stage]=n});
+  var conns=document.querySelectorAll('.sconn');
+
+  var t=0, playing=false, speed=1, raf=null, lastFired=-1, seenFields={};
+
+  function setClock(v){clock.textContent='T+'+Math.round(v)}
+  function pct(v){return (v/TMAX)*100}
+
+  function render(){
+    fill.style.width=pct(t)+'%';
+    head.style.left=pct(t)+'%';
+    scrub.value=t;
+    setClock(t);
+    // determine which events have fired up to t
+    var fired=-1;
+    EVENTS.forEach(function(ev,i){ if(t>=ev.t) fired=i; });
+    if(fired!==lastFired){ rebuildTo(fired); lastFired=fired; }
+    // light pipeline by current stage
+    var curStage = fired>=0 ? EVENTS[fired].stage : 0;
+    for(var s=1;s<=4;s++){
+      nodes[s].classList.toggle('live', s===curStage);
+      nodes[s].classList.toggle('done', s<curStage);
+    }
+    conns.forEach(function(c,i){ c.classList.toggle('flow', curStage>i+1); });
+  }
+
+  function rebuildTo(idx){
+    // markers
+    marks.forEach(function(m){ m.classList.toggle('hit', +m.dataset.idx<=idx); });
+    if(idx<0){ resetPanels(); return; }
+    logEl.innerHTML=''; docEl.innerHTML=''; dataEl.innerHTML=''; seenFields={};
+    var showBase=false, showFinal=false, docCount=0;
+    for(var i=0;i<=idx;i++){
+      var ev=EVENTS[i], col=STAGE_COLOR[ev.stage];
+      // log
+      var li=document.createElement('div'); li.className='el-item'; li.style.setProperty('--accent',col);
+      li.innerHTML='<div class="el-t">T+'+ev.t+'</div><h5>'+ev.title+'</h5><p>'+ev.note+'</p>';
+      logEl.appendChild(li);
+      // doc
+      var d=document.createElement('div'); d.className='doc';
+      d.innerHTML='<div class="dic">'+ev.doc.icon+'</div><div class="dmeta"><b>'+ev.doc.name+'</b><span>T+'+ev.t+' · '+ev.doc.meta+'</span></div>'+
+        '<span class="dtag" style="color:'+ev.doc.tagc+';border:1px solid '+ev.doc.tagc+';background:color-mix(in srgb,'+ev.doc.tagc+' 12%,transparent)">'+ev.doc.tag+'</span>';
+      docEl.appendChild(d); docCount++;
+      // fields
+      ev.fields.forEach(function(f){ if(!seenFields[f]){ seenFields[f]=1;
+        var fe=document.createElement('span'); fe.className='ds-field'; fe.textContent=f; dataEl.appendChild(fe);} });
+      if(ev.base) showBase=true;
+      if(ev.final) showFinal=true;
+    }
+    // cost meter
+    var sum=document.getElementById('simSummary');
+    if(showBase){
+      meter.hidden=false;
+      var total=BASE_COST+(showFinal?LANDED_COST:0);
+      var upl=(LANDED_COST/BASE_COST*100);
+      document.getElementById('cmBase').textContent=thb(BASE_COST);
+      document.getElementById('cmLanded').textContent=(showFinal?('+ '+thb(LANDED_COST)):'รอ allocate');
+      document.getElementById('cmFinal').textContent=(showFinal?thb(total):thb(BASE_COST)+' (base)');
+      document.getElementById('cmBarBase').style.width=(BASE_COST/(BASE_COST+LANDED_COST)*100)+'%';
+      document.getElementById('cmBarLand').style.width=(showFinal?(LANDED_COST/(BASE_COST+LANDED_COST)*100):0)+'%';
+      var up=document.getElementById('cmUplift'); up.hidden=!showFinal;
+      if(showFinal) up.textContent='ต้นทุนเพิ่มขึ้น +'+upl.toFixed(1)+'% จากค่าใช้จ่ายนำเข้า';
+    } else { meter.hidden=true; }
+    // completion summary
+    if(showFinal){
+      sum.hidden=false;
+      document.getElementById('ssDocs').textContent=docCount+' ฉบับ';
+      document.getElementById('ssLanded').textContent=thb(LANDED_COST);
+      document.getElementById('ssFinal').textContent=thb(BASE_COST+LANDED_COST);
+      document.getElementById('ssUplift').textContent='+'+(LANDED_COST/BASE_COST*100).toFixed(1)+'%';
+      document.getElementById('ssBreak').innerHTML=LC_BREAK.map(function(x){
+        return '<span class="ss-bchip">'+x.label+': '+thb(x.amount)+'</span>'; }).join('');
+    } else { sum.hidden=true; }
+  }
+
+  function resetPanels(){
+    logEl.innerHTML='<div class="el-empty">กด “เล่น Simulation” เพื่อเริ่ม…</div>';
+    docEl.innerHTML='<div class="el-empty">ยังไม่มีเอกสาร</div>';
+    dataEl.innerHTML='<div class="el-empty">data จะสะสมเมื่อเหตุการณ์เกิด</div>';
+    meter.hidden=true;
+    var sum=document.getElementById('simSummary'); if(sum) sum.hidden=true;
+    marks.forEach(function(m){m.classList.remove('hit')});
+  }
+
+  function tick(){
+    if(!playing) return;
+    t+=0.025*speed;
+    if(t>=TMAX){ t=TMAX; render(); stop(); return; }
+    render();
+    raf=requestAnimationFrame(tick);
+  }
+  function play(){ if(t>=TMAX){t=0;lastFired=-1;} playing=true; playBtn.textContent='⏸ หยุดชั่วคราว'; raf=requestAnimationFrame(tick); }
+  function stop(){ playing=false; playBtn.textContent= (t>=TMAX?'▶ เล่นใหม่':'▶ เล่นต่อ'); cancelAnimationFrame(raf); }
+
+  playBtn.addEventListener('click',function(){ playing?stop():play(); });
+  resetBtn.addEventListener('click',function(){ stop(); t=0; lastFired=-1; render(); playBtn.textContent='▶ เล่น Simulation'; });
+  scrub.addEventListener('input',function(){ stop(); t=parseFloat(scrub.value); render(); });
+  document.querySelectorAll('.sp').forEach(function(b){ b.addEventListener('click',function(){
+    document.querySelectorAll('.sp').forEach(function(x){x.classList.remove('active')});
+    b.classList.add('active'); speed=parseInt(b.dataset.sp,10);
+  });});
+
+  // ---- Incoterm responsibility matrix ----
+  var IC_ROWS=[
+    {k:'origin',   label:'Origin charges / Export clearance'},
+    {k:'freight',  label:'Main freight (sea / air)'},
+    {k:'insurance',label:'Insurance'},
+    {k:'dest',     label:'Destination THC / unloading'},
+    {k:'duty',     label:'Import duty + VAT'},
+    {k:'inland',   label:'Inland to warehouse'}
+  ];
+  var IC_MATRIX={
+    EXW:{origin:'B',freight:'B',insurance:'B',dest:'B',duty:'B',inland:'B'},
+    FOB:{origin:'S',freight:'B',insurance:'B',dest:'B',duty:'B',inland:'B'},
+    CFR:{origin:'S',freight:'S',insurance:'B',dest:'B',duty:'B',inland:'B'},
+    CIF:{origin:'S',freight:'S',insurance:'S',dest:'B',duty:'B',inland:'B'},
+    DAP:{origin:'S',freight:'S',insurance:'S',dest:'S',duty:'B',inland:'S'},
+    DDP:{origin:'S',freight:'S',insurance:'S',dest:'S',duty:'S',inland:'S'}
+  };
+  var IC_PREP={
+    EXW:'ผู้ซื้อรับผิดชอบเกือบทุก component → ต้องเตรียม/สำรองจ่ายค่าขนส่ง + พิธีการเองมากที่สุด',
+    FOB:'ผู้ขายดูแลถึง on-board; ผู้ซื้อจ่าย freight + insurance + import → อาจ prepay forwarder',
+    CFR:'ผู้ขายจ่าย freight ถึงท่าปลายทาง; ผู้ซื้อจ่าย insurance + ฝั่ง import',
+    CIF:'ผู้ขายจ่าย freight + insurance แล้ว → อยู่ในราคาสินค้า; ผู้ซื้อเหลือเฉพาะฝั่ง import',
+    DAP:'ผู้ขายส่งถึงปลายทาง; ผู้ซื้อจ่ายเฉพาะ duty/VAT (ไม่ค่อยมี prepay ขนส่ง)',
+    DDP:'ผู้ขายจ่ายทุกอย่างรวม duty → landed cost pool ฝั่งผู้ซื้อแทบเป็นศูนย์'
+  };
+  var icMatrix=document.getElementById('icMatrix'),
+      icPool=document.getElementById('icPool'),
+      icPrep=document.getElementById('icPrep');
+  function renderIncoterm(code){
+    var m=IC_MATRIX[code]; icMatrix.innerHTML=''; var pool=[];
+    IC_ROWS.forEach(function(r){
+      var buyer=m[r.k]==='B';
+      var row=document.createElement('div'); row.className='ic-row'+(buyer?' buyer':'');
+      row.innerHTML='<span class="ic-lab">'+r.label+'</span>'+
+        '<span class="ic-badge '+(buyer?'b':'s')+'">'+(buyer?'Buyer':'Seller')+'</span>';
+      icMatrix.appendChild(row);
+      if(buyer) pool.push(r.label);
+    });
+    icPool.innerHTML = pool.length
+      ? pool.map(function(p){return '<span class="ibp-chip">'+p+'</span>'}).join('')
+      : '<span class="ibp-empty">— DDP: ผู้ขายจ่ายหมด (เหลือแค่มูลค่าสินค้า)</span>';
+    icPrep.textContent=IC_PREP[code];
+  }
+  document.querySelectorAll('.ibt').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.ibt').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active'); renderIncoterm(b.dataset.ic);
+    });
+  });
+  renderIncoterm('FOB');
+
+  // ---- Step by Step ----
+  var STEPS=[
+    {n:1, role:'Procurement', rc:'var(--cyan)', title:'สร้าง PO นำเข้า',
+      what:'ออกใบสั่งซื้อกับ vendor ต่างประเทศ ระบุสกุลเงิน อัตราแลกเปลี่ยน และ Incoterm — เป็นจุดเริ่มต้นของต้นทุนสินค้าฐาน',
+      input:['vendor','currency','exchangerate','incoterm','item / qty','rate_fx','weight','cbm','hs_code'],
+      action:'สร้าง PO → ผ่าน Approval Workflow → ส่งให้ vendor',
+      doc:{ic:'🧾',name:'Purchase Order #PO-1042'},
+      gl:null, glnote:'ยังไม่ลงบัญชี — เป็น commitment / ภาระผูกพันเท่านั้น',
+      next:'รออนุมัติ แล้วชำระมัดจำตาม payment terms'},
+    {n:2, role:'Finance', rc:'var(--cyan)', opt:true, title:'Vendor Prepayment (มัดจำ)',
+      what:'จ่ายเงินล่วงหน้าให้ vendor ตาม % ที่ตกลง — เป็น Payment Terms (แยกจาก Incoterm) ส่วน component ที่ต้อง prepay เองขึ้นกับ Incoterm',
+      input:['vendor_prepayment','deposit_pct','payment','prepaid_asset'],
+      action:'สร้าง Vendor Prepayment → จ่ายเงิน → คงเป็น Prepaid asset จนกว่าจะ apply กับ Bill',
+      doc:{ic:'💳',name:'Vendor Prepayment #VP-220'},
+      gl:[{dr:'Vendor Prepayment (Asset)',cr:'Cash / Bank'}],
+      glnote:'มัดจำลงเป็นสินทรัพย์ ยังไม่ใช่ต้นทุน/ค่าใช้จ่าย',
+      next:'เริ่มจัดแผนขนส่งเมื่อ vendor พร้อมส่ง'},
+    {n:3, role:'Logistics', rc:'var(--violet)', title:'Shipment Plan / Booking',
+      what:'รวม PO ที่ลงเรือเที่ยวเดียวกันเข้าเป็น Shipment เดียว จองระวางและกำหนดตู้ — Shipment คือหน่วยที่ landed cost จะถูกผูก',
+      input:['shipment_id','linked_po[]','mode','vessel','container_type'],
+      action:'Consolidate PO → จองระวาง (Vessel/Flight) → ออก Booking',
+      doc:{ic:'📦',name:'Booking Confirmation'},
+      gl:null, glnote:'ไม่มีผลทางบัญชี',
+      next:'รอ vendor ส่งของขึ้นเรือ (ETD)'},
+    {n:4, role:'Logistics', rc:'var(--violet)', title:'ETD — สินค้าออกจากต้นทาง',
+      what:'สินค้าขึ้นเรือ/เครื่อง ออกเอกสารขนส่งหลัก จุดโอนกรรมสิทธิ์/ความเสี่ยงเป็นไปตาม Incoterm',
+      input:['bl_no','etd','eta','status=in-transit'],
+      action:'รับ B/L หรือ AWB → ติดตามสถานะ in-transit',
+      doc:{ic:'🚢',name:'Bill of Lading (B/L)'},
+      gl:null, glnote:'อาจรับรู้ Goods-in-transit ตามนโยบาย/Incoterm',
+      next:'ติดตามจนเรือถึงท่าปลายทาง (ETA)'},
+    {n:5, role:'Logistics', rc:'var(--violet)', title:'ETA — เรือถึงท่าปลายทาง',
+      what:'สินค้าถึงท่าปลายทาง ตัวแทนแจ้ง Arrival Notice เพื่อเตรียมพิธีการ',
+      input:['ata','do_release'],
+      action:'รับ Arrival Notice → เตรียมเอกสารพิธีการ',
+      doc:{ic:'⚓',name:'Arrival Notice'},
+      gl:null, glnote:'ไม่มีผลทางบัญชี',
+      next:'ยื่นพิธีการศุลกากร'},
+    {n:6, role:'Customs / Finance', rc:'var(--green)', title:'พิธีการศุลกากร',
+      what:'ยื่นใบขนสินค้า ชำระอากรขาเข้าและ VAT นำเข้า — อากรเป็นต้นทุนจริง (เข้า pool), VAT นำเข้ามักขอคืนได้',
+      input:['import_duty','import_vat','customs_entry_no'],
+      action:'ยื่นใบขนฯ → ชำระอากร+VAT → เคลียร์ของออกจากท่า',
+      doc:{ic:'🛃',name:'ใบขนสินค้าขาเข้า + ใบเสร็จอากร'},
+      gl:[{dr:'Duty clearing / Input VAT',cr:'Cash / A-P (ศุลกากร)'}],
+      glnote:'แยก Duty (cost) ออกจาก Import VAT (recoverable)',
+      next:'ขนของถึงคลัง แล้วรับเข้า (Item Receipt)'},
+    {n:7, role:'Warehouse', rc:'var(--green)', title:'Item Receipt — รับเข้าคลัง',
+      what:'รับสินค้าเข้าระบบอ้างอิง PO/Shipment ระบุ Lot/Serial — มูลค่า ณ จุดนี้เป็น "ต้นทุนฐาน" เท่านั้น ยังไม่รวม landed cost',
+      input:['createdfrom','quantityreceived','location','inventorydetail','lotnumber','base_cost'],
+      action:'สร้าง Item Receipt → ตรวจ Qty → ระบุ Lot/Serial + QC',
+      doc:{ic:'📥',name:'Item Receipt #IR-880'},
+      gl:[{dr:'Inventory (base cost)',cr:'Accrued Purchases (IRNB)'}],
+      glnote:'IRNB = Inventory Received Not Billed (รอตั้งหนี้)',
+      next:'ตั้งหนี้ค่าสินค้ากับ vendor'},
+    {n:8, role:'Finance / A-P', rc:'var(--amber)', opt:true, title:'Vendor Bill ค่าสินค้า + Apply Prepayment',
+      what:'ตั้งหนี้ค่าสินค้า (3-way match: PO ↔ Receipt ↔ Bill) แล้วนำมัดจำที่จ่ายไว้มาตัด เหลือยอดค้างจริง',
+      input:['vendor_bill_goods','3way_match','apply_prepayment','balance_due'],
+      action:'สร้าง Vendor Bill → match → Apply Vendor Prepayment',
+      doc:{ic:'🧮',name:'Vendor Bill (Goods) − Prepayment'},
+      gl:[{lab:'ตั้งหนี้',dr:'Accrued Purchases (IRNB)',cr:'Accounts Payable'},
+          {lab:'ตัดมัดจำ',dr:'Accounts Payable',cr:'Vendor Prepayment (Asset)'}],
+      glnote:'ยอดเต็มของ Bill (ก่อนหักมัดจำ) คือฐานที่จะ allocate',
+      next:'ตั้งหนี้ค่าใช้จ่ายนำเข้า'},
+    {n:9, role:'Finance / A-P', rc:'var(--amber)', title:'ตั้งหนี้ค่าใช้จ่ายนำเข้า',
+      what:'ตั้งหนี้ค่าใช้จ่ายนำเข้าแยกราย vendor — freight / insurance / broker / THC / inland — ทั้งหมดเข้าสู่ Landed Cost Pool',
+      input:['freight','insurance','broker_fee','port_thc','inland'],
+      action:'สร้าง Vendor Bills ของแต่ละ service provider → ผูกกับ Shipment',
+      doc:{ic:'💵',name:'Vendor Bills (Import Expenses)'},
+      gl:[{dr:'Landed Cost Clearing',cr:'Accounts Payable'}],
+      glnote:'พักไว้ที่ clearing ก่อน รอ allocate เข้า inventory',
+      next:'เคลียร์ยอดค้างทั้งหมด'},
+    {n:10, role:'Finance / A-P', rc:'var(--amber)', title:'จ่ายส่วนที่เหลือ',
+      what:'ชำระยอดค้างของ Bill ค่าสินค้า (หลังหักมัดจำ) และค่าใช้จ่ายนำเข้าทั้งหมด',
+      input:['vendor_payment','paid_in_full'],
+      action:'สร้าง Vendor Payment เคลียร์ A-P',
+      doc:{ic:'🏦',name:'Vendor Payment'},
+      gl:[{dr:'Accounts Payable',cr:'Cash / Bank'}],
+      glnote:'กระแสเงินสดออกจริงตามยอดสุทธิ',
+      next:'รัน Custom Allocation Script'},
+    {n:11, role:'System · Custom Script', rc:'var(--amber)', title:'Landed Cost Allocation',
+      what:'Script รวบรวม cost pool ของ Shipment คำนวณสัดส่วนต่อ line ตาม basis แล้วกระจาย allocated cost ลงแต่ละ item',
+      input:['cost_pool','basis_by_component','line_factor','allocated'],
+      action:'Gather → Compute Factor → Allocate (rounding adj.) → เตรียมเขียนกลับ',
+      doc:{ic:'⚙️',name:'Allocation Trace (audit)'},
+      gl:null, glnote:'ยังไม่ post — คำนวณเสร็จแล้วไปเช็ค period ก่อน',
+      next:'ตรวจ Accounting Period ของ Item Receipt'},
+    {n:12, role:'System / Finance', rc:'var(--amber)', title:'เขียนกลับ + เช็ค Period',
+      what:'ตัดสินปลายทางตามสถานะงวด — งวดเปิด เขียนกลับ IR เดิม; งวดปิด ลง adjustment ในงวดที่เปิด',
+      input:['period_status','landed_cost','unit_cost_final'],
+      action:'IF period OPEN → update Item Receipt · ELSE → Inventory/Cost Adjustment (open period)',
+      doc:{ic:'🔀',name:'Updated IR  /  Inventory Adjustment'},
+      gl:[{lab:'งวดเปิด (ลงงวดเดิม)',dr:'Inventory (landed)',cr:'Landed Cost Clearing'},
+          {lab:'งวดปิด (ลงงวดที่เปิด)',dr:'Inventory / COGS Adj.',cr:'Landed Cost Clearing'}],
+      glnote:'ถ้าสินค้าถูกขายไปแล้ว ส่วนนั้นจะ hit COGS แทน Inventory',
+      next:'สรุปผลต้นทุนถึงคลัง'},
+    {n:13, role:'Result', rc:'var(--green)', title:'ต้นทุนถึงคลัง + Audit',
+      what:'ต้นทุนสุดท้าย = ต้นทุนฐาน + landed cost ที่กระจายแล้ว Inventory asset ใน GL ตรงเงินจ่ายจริง พร้อม trace สำหรับกระทบยอด',
+      input:['unit_cost_final','inventory_value','allocation_trace'],
+      action:'ใช้ต้นทุนถึงคลังในการตั้งราคา / คำนวณกำไรขั้นต้น / วิเคราะห์ supplier-route',
+      doc:{ic:'📊',name:'Final Costing + Allocation Report'},
+      gl:null, glnote:'Landed Cost Clearing ควรถูกล้างเป็นศูนย์เมื่อ allocate ครบ',
+      next:'— จบกระบวนการ —'}
+  ];
+
+  var railEl=document.getElementById('sbsRail'), cardEl=document.getElementById('sbsCard'),
+      nowEl=document.getElementById('sbsNow'), totEl=document.getElementById('sbsTotal'),
+      prevB=document.getElementById('sbsPrev'), nextB=document.getElementById('sbsNext');
+  var cur=0; totEl.textContent=STEPS.length;
+
+  var SBS_SHORT=['PO','มัดจำ','Shipment','ETD','ETA','พิธีการ','รับเข้า','Bill+ตัดมัดจำ','ค่านำเข้า','จ่ายเงิน','Allocate','เช็คงวด','ผลลัพธ์'];
+  STEPS.forEach(function(s,i){
+    var el=document.createElement('div'); el.className='sbs-step'; el.dataset.i=i;
+    el.innerHTML='<div class="sbn">'+s.n+'</div><div class="sbl">'+(SBS_SHORT[i]||s.title)+'</div>';
+    el.addEventListener('click',function(){ cur=i; renderStep(); });
+    railEl.appendChild(el);
+  });
+
+  function glHtml(s){
+    if(!s.gl) return '<div class="gl-none">'+ (s.glnote||'ไม่มีผลทางบัญชี') +'</div>';
+    var h='';
+    s.gl.forEach(function(e){
+      h+='<div class="gl-entry">';
+      if(e.lab) h+='<div class="gle-lab">'+e.lab+'</div>';
+      h+='<div class="gl-line dr"><span class="drcr">Dr</span><span class="acct">'+e.dr+'</span></div>';
+      h+='<div class="gl-line cr"><span class="drcr">Cr</span><span class="acct">'+e.cr+'</span></div>';
+      h+='</div>';
+    });
+    if(s.glnote) h+='<div class="gl-none" style="margin-top:4px">⊙ '+s.glnote+'</div>';
+    return h;
+  }
+
+  function renderStep(){
+    var s=STEPS[cur];
+    cardEl.style.setProperty('--rc',s.rc);
+    cardEl.innerHTML=
+      '<div class="sbs-top">'+
+        '<div class="sbs-bignum">'+s.n+'</div>'+
+        '<div class="sbs-th"><div class="sbs-role">'+s.role+'</div>'+
+          '<h2>'+s.title+'</h2></div>'+
+        (s.opt?'<span class="sbs-optflag">OPTION</span>':'')+
+      '</div>'+
+      '<div class="sbs-body">'+
+        '<div class="sbs-main">'+
+          '<p class="sbs-what">'+s.what+'</p>'+
+          '<div class="sbs-sec"><h4>Input / Fields</h4><div class="sbs-inputs">'+
+            s.input.map(function(f){return '<span class="f">'+f+'</span>'}).join('')+'</div></div>'+
+          '<div class="sbs-sec"><h4>Action</h4><div class="sbs-action">'+s.action+'</div></div>'+
+        '</div>'+
+        '<div class="sbs-aside">'+
+          '<div class="sbs-doc"><div class="di">'+s.doc.ic+'</div>'+
+            '<div class="dm"><small>เอกสารที่ออก</small><b>'+s.doc.name+'</b></div></div>'+
+          '<div class="sbs-gl"><div class="glh">GL Impact</div>'+glHtml(s)+'</div>'+
+          '<div class="sbs-next"><b>→ Next:</b> '+s.next+'</div>'+
+        '</div>'+
+      '</div>';
+    // rail state
+    railEl.querySelectorAll('.sbs-step').forEach(function(el,i){
+      el.classList.toggle('active', i===cur);
+      el.classList.toggle('done', i<cur);
+    });
+    nowEl.textContent=s.n;
+    prevB.disabled = cur===0;
+    nextB.disabled = cur===STEPS.length-1;
+    nextB.textContent = cur===STEPS.length-1 ? 'เสร็จสิ้น ✓' : 'ถัดไป →';
+    var act=railEl.querySelector('.sbs-step.active');
+    if(act) act.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }
+  prevB.addEventListener('click',function(){ if(cur>0){cur--;renderStep();} });
+  nextB.addEventListener('click',function(){ if(cur<STEPS.length-1){cur++;renderStep();} });
+  // GL show/hide toggle
+  var glT=document.getElementById('glToggle'), stepsPanel=document.getElementById('tab-steps');
+  glT.addEventListener('click',function(){
+    var hidden=stepsPanel.classList.toggle('hide-gl');
+    glT.textContent = hidden ? 'GL: ซ่อน' : 'GL: แสดง';
+    glT.classList.toggle('off', hidden);
+  });
+  document.addEventListener('keydown',function(e){
+    if(!document.getElementById('tab-steps').classList.contains('active')) return;
+    if(e.key==='ArrowRight'&&cur<STEPS.length-1){cur++;renderStep();}
+    if(e.key==='ArrowLeft'&&cur>0){cur--;renderStep();}
+  });
+  renderStep();
+
+  render();
+})();
+</script>
+</body>
+</html>
