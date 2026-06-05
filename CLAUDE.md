@@ -14,7 +14,7 @@ Tracked layout:
 - `prd/PRD_TEMPLATE.md` — the planning template that's forked per feature/module
 - `README.md` — the public-facing index for the GitHub repo
 
-Untracked sibling dirs (`Architecture-Flow-Diagram/`, `process-flow-visualizer/`) are **separate, self-contained skill projects**, each with its own `CLAUDE.md` — treat them independently.
+Sibling dirs (`process-flow-visualizer/` — tracked; `Architecture-Flow-Diagram/` — currently untracked) are **separate, self-contained skill projects**, each with its own `CLAUDE.md` — treat them independently.
 
 ## PRD Workflow
 

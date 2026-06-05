@@ -1,6 +1,6 @@
 ---
-name: customhtml
-description: Teibto Design System (TBT-DS) — Lit Web Components for NetSuite Suitelet custom HTML pages. Use this skill whenever building, editing, or reviewing any Teibto Suitelet UI that uses custom HTML (not serverWidget). Triggers on requests like "สร้าง Suitelet", "เขียนหน้า UI", "เพิ่ม component", "ทำ form", "สร้าง table", "ออกแบบ page NetSuite", or any mention of tbt-* components. Always consult this skill before writing any HTML for a Teibto Suitelet — never use raw HTML primitives when a tbt-* component exists.
+name: teibto-ui-component
+description: "Use this skill for ALL Teibto NetSuite Suitelet UI work. Trigger on any of: building or editing tbt-* Web Components (tbt-input, tbt-table, tbt-modal, tbt-app-shell, tbt-section, tbt-field-grid, tbt-summary, tbt-timeline, tbt-alert, tbt-button, tbt-badge); theming via tbt-theme.css; loading tbt-ds.min.js from File Cabinet; TBT-DS governance (no hex colors, no style blocks, Lit only); designing any Teibto ERP Suitelet page layout; migrating plain HTML/CSS to tbt-* components; debugging Web Component registration or Shadow DOM styling; writing RFC for new tbt-* components. Keywords: Teibto, tbt-*, TBT-DS, porjai-ds, Suitelet custom HTML, NetSuite Suitelet UI."
 ---
 
 # Teibto Design System (TBT-DS) — Skill Reference
@@ -33,7 +33,6 @@ Suitelet (sl_xxx.js)
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Teibto · [Page Name]</title>
   <link rel="stylesheet" href="/sc/SuiteScripts/Teibto/ds/v1.0.0/tbt-theme.css">
-  <link rel="stylesheet" href="/sc/SuiteScripts/Teibto/ds/v1.0.0/tbt-icons.css">
   <script type="module" src="/sc/SuiteScripts/Teibto/ds/v1.0.0/tbt-ds.min.js"></script>
 </head>
 <body class="tbt-page">
@@ -43,6 +42,13 @@ Suitelet (sl_xxx.js)
 </body>
 </html>
 ```
+
+> ⚠️ **Icons ใน Shadow DOM (v1.17+):** `tbt-ds.min.js` bundle รวม `tbt-icons-css.js` ไว้แล้ว — inject CSS Tabler icons เข้า shadow root ของทุก component อัตโนมัติ ไม่ต้อง link `tbt-icons.css` แยก
+
+### Breaking Changes ที่ต้องรู้
+| Version | Component | การเปลี่ยนแปลง |
+|---|---|---|
+| v1.10.0 | `tbt-form` | event detail เปลี่ยนจาก `{ formData: FormData }` → `{ data: Object }` |
 
 ---
 
@@ -134,24 +140,48 @@ All visual decisions live here. Components use `var(--tbt-*)` only — never har
 
 ## 3. Component Inventory
 
-| Component | Tag | Status | Description |
-|---|---|---|---|
-| App Shell | `<tbt-app-shell>` | v1 | Page wrapper with menubar + content area |
-| Menubar | `<tbt-menubar>` | v1 | Top navigation bar |
-| Sidebar | `<tbt-sidebar>` | v1 | Collapsible side navigation |
-| Subtab | `<tbt-subtab>` | v1 | Tab navigation within a page |
-| Button | `<tbt-button>` | v1 | Action button (primary, secondary, danger, ghost) |
-| Badge | `<tbt-badge>` | v1 | Status indicator |
-| Field | `<tbt-field>` | v1 | Label + value display pair |
-| Field Grid | `<tbt-field-grid>` | v1 | Responsive grid of fields |
-| Form | `<tbt-form>` | v1 | Form wrapper with submit handling |
-| Search | `<tbt-search>` | v1 | Search input with debounce |
-| Dropdown | `<tbt-dropdown>` | v1 | Select / dropdown list |
-| Multi-select | `<tbt-multiselect>` | v1 | Multiple selection input |
-| Date Picker | `<tbt-datepicker>` | v1 | Date input with calendar popup |
-| Table | `<tbt-table>` | v1 | Data table with sort, pagination |
-| Section | `<tbt-section>` | v1 | Content section with optional title |
-| Summary | `<tbt-summary>` | v1 | KPI summary cards row |
+> Source: [github.com/kingcomen/tbt-ds](https://github.com/kingcomen/tbt-ds) — CHANGELOG v1.17.0 (2026-05-22)
+
+### Layout & Navigation
+| Component | Tag | Description |
+|---|---|---|
+| App Shell | `<tbt-app-shell>` | Page wrapper — menubar + sidebar + content area (mobile responsive 768px) |
+| Menubar | `<tbt-menubar>` | Top nav with logo and menu groups (hamburger fix ≤768px) |
+| Sidebar | `<tbt-sidebar>` | Collapsible side navigation |
+| Subtab | `<tbt-subtab>` | Horizontal tab navigation within a page |
+
+### Actions & Feedback
+| Component | Tag | Description |
+|---|---|---|
+| Button | `<tbt-button>` | primary, secondary, danger, ghost, accent variants |
+| Badge | `<tbt-badge>` | Status pill: success, warning, danger, info, neutral, primary |
+| Alert | `<tbt-alert>` | Inline feedback banner with dismiss |
+| Modal | `<tbt-modal>` | Dialog: default, confirm, danger variants |
+| Icon | `<tbt-icon>` | Tabler icon wrapper — 80+ ERP semantic aliases (save, approve, reject…) |
+
+### Form Inputs
+| Component | Tag | Description |
+|---|---|---|
+| Input | `<tbt-input>` | Text/number/email/password with label + validation |
+| Dropdown | `<tbt-dropdown>` | Styled select with label + validation |
+| Multi-select | `<tbt-multiselect>` | Checkbox multi-select with chip display |
+| Date Picker | `<tbt-datepicker>` | Native date input with label + validation |
+| Checkbox | `<tbt-checkbox>` | Styled checkbox with indeterminate state + validation |
+| Toggle | `<tbt-toggle>` | Sliding boolean switch with on/off labels |
+| Search | `<tbt-search>` | Debounced search input |
+| Form | `<tbt-form>` | Form wrapper — event detail `{ data: Object }` (**v1.10 breaking change**) |
+
+### Display
+| Component | Tag | Description |
+|---|---|---|
+| Field | `<tbt-field>` | Label + value display pair (read-only) |
+| Field Grid | `<tbt-field-grid>` | Responsive CSS grid for tbt-field elements |
+| Section | `<tbt-section>` | Collapsible card section with actions slot |
+| Table | `<tbt-table>` | Data table — sortable, paginated, responsive card view |
+| Summary | `<tbt-summary>` | Document totals block (subtotal, VAT, grand total) |
+| Approval Flow | `<tbt-approval-flow>` | Approval chain visualization — horizontal/vertical layout |
+| Audit Log | `<tbt-audit-log>` | Activity timeline with field-level change tracking |
+| SVG | `<tbt-svg>` | SVG illustrations — 7 built-in named + external URL |
 
 ---
 
@@ -245,6 +275,62 @@ Props: `columns` (Array), `rows` (Array), `paginate`, `page-size`, `loading`, `e
   </tbt-tab>
 </tbt-subtab>
 ```
+
+### tbt-icon
+```html
+<!-- Semantic ERP aliases -->
+<tbt-icon name="save"></tbt-icon>
+<tbt-icon name="approve" color="success" size="lg"></tbt-icon>
+<tbt-icon name="reject"  color="danger"></tbt-icon>
+<tbt-icon name="invoice" size="xl"></tbt-icon>
+<!-- Raw Tabler name fallback -->
+<tbt-icon name="circle-check" color="success" spin></tbt-icon>
+```
+Props: `name` (alias or Tabler name), `size` (xs|sm|md|lg|xl|2xl), `color` (primary|secondary|muted|success|warning|danger|info), `spin`
+
+### tbt-checkbox
+```html
+<tbt-checkbox label="ยืนยันข้อมูล" ?checked=${val} required
+  @tbt-change=${e => handleChange(e.detail.checked)}>
+</tbt-checkbox>
+<!-- Indeterminate (select-all pattern) -->
+<tbt-checkbox label="เลือกทั้งหมด" ?indeterminate=${partial}></tbt-checkbox>
+```
+
+### tbt-toggle
+```html
+<tbt-toggle label="สถานะ" on-label="ใช้งาน" off-label="ปิดใช้"
+  ?checked=${active}
+  @tbt-change=${e => handleToggle(e.detail.checked)}>
+</tbt-toggle>
+```
+
+### tbt-approval-flow
+```html
+<tbt-approval-flow layout="horizontal"
+  .steps=${[
+    { label: 'ผู้ขอ',      approver: 'สมชาย',  status: 'approved',  timestamp: '2026-05-20 09:00', comment: 'OK' },
+    { label: 'ผู้จัดการ',  approver: 'วิชิต',   status: 'current' },
+    { label: 'ผู้อำนวยการ', approver: 'มานี',   status: 'pending' }
+  ]}>
+</tbt-approval-flow>
+```
+Props: `layout` (horizontal|vertical), `steps` (Array)  
+Step status: `approved` | `rejected` | `pending` | `current` | `skipped`
+
+### tbt-audit-log
+```html
+<tbt-audit-log max-height="400px"
+  .entries=${[
+    { action: 'created',  user: 'สมชาย', timestamp: '2026-05-20T09:00:00' },
+    { action: 'approved', user: 'วิชิต',  timestamp: '2026-05-21T10:30:00',
+      changes: [{ field: 'Status', from: 'Pending', to: 'Approved' }] },
+    { action: 'printed',  user: 'มานี',  timestamp: '2026-05-22T08:00:00' }
+  ]}>
+</tbt-audit-log>
+```
+Props: `entries` (Array), `max-height` (CSS string), `compact` (boolean, hides field changes)  
+Action types: `created` | `updated` | `approved` | `rejected` | `submitted` | `cancelled` | `deleted` | `printed` | `emailed` | `attached` | `viewed`
 
 ### tbt-menubar
 ```html
@@ -387,6 +473,25 @@ async function save(payload) {
 | `<script src="https://...">` ใน NS | ตรวจ CSP ก่อน — ใช้ File Cabinet เป็น fallback |
 | Shadow DOM query: `document.querySelector('tbt-button button')` | ใช้ event / property ของ component แทน |
 | `import { html } from 'lit'` ใน browser โดยไม่มี importmap | ใช้ full CDN URL หรือ bundle แล้ว |
+| เขียน tbt-* โดยไม่ตรวจว่า tbt-ds.js deploy แล้ว | ตรวจ File Cabinet ก่อน — ถ้าไม่มีให้ fallback plain HTML |
+
+### ⚠️ ตรวจ tbt-ds.js ก่อนใช้งานเสมอ
+
+tbt-* elements จะ **render ไม่ออกโดยไม่มี error** ถ้า `tbt-ds.min.js` ไม่ถูก load — UI หายเงียบๆ
+
+**ตรวจใน Suitelet JS (server-side):**
+```javascript
+const TBT_DS_PATH = '/SuiteScripts/Teibto/ds/v1.0.0/tbt-ds.min.js';
+let tbtDsUrl = null;
+try { tbtDsUrl = file.load({ id: TBT_DS_PATH }).url; } catch (_) { /* not deployed */ }
+
+// inject script เฉพาะเมื่อมีไฟล์จริง
+if (tbtDsUrl) {
+    html = html.replace('</head>', `<script src="${tbtDsUrl}"></script>\n</head>`);
+}
+```
+
+**ถ้า tbt-ds.js ยังไม่ deploy** — ใช้ plain HTML/CSS ก่อน อย่าเขียน tbt-* components ทิ้งไว้ให้ UI หาย
 
 ---
 
