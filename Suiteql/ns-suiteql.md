@@ -12,6 +12,8 @@ You are generating a SuiteQL query for a specific NetSuite tenant. The 2026.1 sc
 - Deny-list memory: `~/.claude/projects/C--Users-wichi-Claude-Project-Netsuite/memory/project_unsupported_schema_fields.md`
 - Output directory: `<CWD>/Schema/` (current working directory of the Claude Code session, created if missing) — or whatever path the user specifies.
 
+> ⚠️ **Environment-specific paths.** The schema-export and deny-list paths above are tied to a particular NetSuite consumer project on the maintainer's machine — they are **not** portable. Before running this skill in another project/tenant/host: confirm both files exist at these paths, or adjust the constants to point at that environment's schema export and deny-list. If the deny-list (step 1) is missing, do **not** silently proceed — surface it and stop, since the guard is the whole point of this skill.
+
 > **Companion skill:** `netsuite-suiteql` (in same `.claude/skills/` dir) is the SuiteQL syntax reference manual — Oracle vs SQL-92 rules, supported/unsupported functions, BUILTIN.* catalog, performance best practices, governance limits, pagination patterns, Connect vs N/query vs REST trade-offs. Apply its rules to whatever this skill produces. In particular: `||` not `+`, `TO_DATE` not date literals, no `[]` brackets, `SUBSTR` not `SUBSTRING`, `INSTR` not `LOCATE`, batch IN ≤ 1000, no `OFFSET` (use ROWNUM). **CTE/WITH** is OK in N/query + REST but **not in SuiteAnalytics Connect** — ถ้าต้อง portable หลีกเลี่ยง.
 
 ## Inputs to clarify (only if not given)

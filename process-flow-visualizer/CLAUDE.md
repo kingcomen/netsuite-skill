@@ -16,7 +16,7 @@ conduct" here. When you change skill behavior, you are usually editing `SKILL.md
 
 ## File layout
 
-The canonical structure lives inside the packaged bundle `process-flow-visualizer.skill` (a zip):
+The canonical structure lives at this directory root (and is mirrored inside the packaged bundle `process-flow-visualizer.skill`, a zip):
 
 ```
 process-flow-visualizer/
@@ -27,9 +27,10 @@ process-flow-visualizer/
   assets/example-import-landed-cost.html    # a complete real example; lift components verbatim
 ```
 
-The loose files at the directory root (`SKILL.md`, `template.html`) are an export and are byte-identical
-to their counterparts in the bundle. `files (15).zip` is a delivery wrapper around the three loose files.
-The `.skill` bundle is the artifact that gets installed.
+The directory root holds the single source tree shown above. The `.skill` bundle is the artifact that gets
+installed; it zips only the install payload (`SKILL.md`, `assets/`, `references/`) — `README.md`, `evals/`,
+and `CLAUDE.md` are dev-only and stay out of the bundle. After editing any payload file, repackage so the
+bundle stays in sync (see "Repackaging the skill" below).
 
 ## How the generated HTML works (template.html architecture)
 
@@ -85,11 +86,20 @@ These are in `SKILL.md` but are the ones that silently break output:
 
 ## Repackaging the skill
 
-After editing `SKILL.md` / `template.html` / `references/` / `assets/`, rebuild the bundle so the loose
-files and the `.skill` zip stay in sync (they must remain byte-identical):
+After editing `SKILL.md` / `assets/` / `references/`, rebuild the bundle so the shipped `.skill` stays in
+sync with the source tree. The bundle ships only the install payload — `SKILL.md`, `assets/`, and
+`references/` — **not** `README.md`, `evals/`, `CLAUDE.md`, or the workspace. So don't `zip -r` the whole
+folder (that would sweep in dev-only files and the bundle itself); list the payload explicitly. From the
+repo root (the parent of `process-flow-visualizer/`):
 
 ```bash
-zip -r process-flow-visualizer.skill process-flow-visualizer/   # from a dir containing the canonical tree
+rm -f process-flow-visualizer/process-flow-visualizer.skill
+zip process-flow-visualizer/process-flow-visualizer.skill \
+  process-flow-visualizer/SKILL.md \
+  process-flow-visualizer/assets/template.html \
+  process-flow-visualizer/assets/example-import-landed-cost.html \
+  process-flow-visualizer/references/components.md
+# verify: unzip -l should list exactly those four files under process-flow-visualizer/
 ```
 
 ## Relationship to the parent workspace
